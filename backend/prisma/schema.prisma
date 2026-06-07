@@ -33,6 +33,7 @@ model Usuario {
 
   perfilId      String
   perfil        Perfil    @relation(fields: [perfilId], references: [id])
+  refreshTokens RefreshToken[]
 
   ultimoLogin   DateTime?
 
@@ -43,4 +44,53 @@ model Usuario {
   @@index([email])
 
   @@map("usuarios")
+}
+
+model CategoriaProduto {
+  id            String    @id @default(uuid())
+  nome          String    @unique
+  descricao     String?
+
+  criadoEm      DateTime  @default(now())
+  atualizadoEm  DateTime  @updatedAt
+
+  @@map("categorias_produto")
+}
+
+model Fornecedor {
+  id            String    @id @default(uuid())
+  nome          String
+  razaoSocial   String?
+  cnpj          String?   @unique
+  telefone      String?
+  email         String?
+  contato       String?
+
+  ativo         Boolean   @default(true)
+
+  criadoEm      DateTime  @default(now())
+  atualizadoEm  DateTime  @updatedAt
+
+  @@index([nome])
+  @@map("fornecedores")
+}
+
+model RefreshToken {
+  id            String    @id @default(uuid())
+
+  usuarioId     String
+  usuario       Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  token         String    @unique
+
+  expiraEm      DateTime
+
+  revogado      Boolean   @default(false)
+
+  criadoEm      DateTime  @default(now())
+
+  @@index([usuarioId])
+  @@index([token])
+
+  @@map("refresh_tokens")
 }

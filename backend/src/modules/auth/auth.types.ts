@@ -8,5 +8,7 @@ export interface LoginResponse {
   nome: string;
   usuario: string;
   perfil: string;
+
   token: string;
+  refreshToken: string;
 }
