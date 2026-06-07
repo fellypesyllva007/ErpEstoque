@@ -1,9 +1,9 @@
 #!/bin/bash
 
-cd "$(dirname "$0")/.."
+cd /home/ubuntu/apps/ErpEstoque || exit 1
 
-git add .
-
-git commit -m "Auto Sync $(date '+%Y-%m-%d %H:%M:%S')" || true
-
-git push origin main
+if [[ -n $(git status --porcelain) ]]; then
+    git add .
+    git commit -m "Auto Sync $(date '+%Y-%m-%d %H:%M:%S')" || true
+    git push origin main
+fi
