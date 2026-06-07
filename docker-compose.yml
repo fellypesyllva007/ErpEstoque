@@ -1,0 +1,23 @@
+services:
+  erp-postgres:
+    image: postgres:16-alpine
+    container_name: erp-postgres
+
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: erpestoque
+      POSTGRES_USER: erpuser
+      POSTGRES_PASSWORD: erp123456
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - ./database/postgres:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erpuser -d erpestoque"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
