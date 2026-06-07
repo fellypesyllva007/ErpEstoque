@@ -1,9 +1,9 @@
 import express from "express";
 
-import authRoutes from "./modules/auth/auth.routes";
+import authRoutes from "./modules/auth/auth.routes.js";
 
-import { authMiddleware } from "./middlewares/auth.middleware";
-import { permissionMiddleware } from "./middlewares/permission.middleware";
+import { authMiddleware } from "./middlewares/auth.middleware.js";
+import { permissionMiddleware } from "./middlewares/permission.middleware.js";
 
 const app = express();
 

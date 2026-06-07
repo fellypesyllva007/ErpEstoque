@@ -2,8 +2,8 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
-import { prisma } from "../../core/prisma/prisma";
-import { LoginRequest, LoginResponse } from "./auth.types";
+import { prisma } from "../../core/prisma/prisma.js";
+import { LoginRequest, LoginResponse } from "./auth.types.js";
 
 export class AuthService {
   async login(
