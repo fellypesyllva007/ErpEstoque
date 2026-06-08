@@ -13,6 +13,7 @@ model Perfil {
   descricao   String?
 
   usuarios    Usuario[]
+  permissoes PerfilPermissao[]
 
   criadoEm    DateTime  @default(now())
   atualizadoEm DateTime @updatedAt
@@ -34,6 +35,8 @@ model Usuario {
   perfilId      String
   perfil        Perfil    @relation(fields: [perfilId], references: [id])
   refreshTokens RefreshToken[]
+  auditoriasProduto AuditoriaProduto[]
+
 
   ultimoLogin   DateTime?
 
@@ -50,12 +53,27 @@ model CategoriaProduto {
   id            String    @id @default(uuid())
   nome          String    @unique
   descricao     String?
+  produtos      Produto[]
+
 
   criadoEm      DateTime  @default(now())
   atualizadoEm  DateTime  @updatedAt
 
   @@map("categorias_produto")
 }
+model Marca {
+  id            String    @id @default(uuid())
+  nome          String    @unique
+  descricao     String?
+  produtos      Produto[]
+
+
+  criadoEm      DateTime  @default(now())
+  atualizadoEm  DateTime  @updatedAt
+
+  @@map("marcas")
+}
+
 
 model Fornecedor {
   id            String    @id @default(uuid())
@@ -66,6 +84,8 @@ model Fornecedor {
   email         String?
   contato       String?
 
+  produtos      Produto[]
+
   ativo         Boolean   @default(true)
 
   criadoEm      DateTime  @default(now())
@@ -73,6 +93,125 @@ model Fornecedor {
 
   @@index([nome])
   @@map("fornecedores")
+}
+model Produto {
+  id                  String            @id @default(uuid())
+  codigoInterno       String            @unique
+  codigoFornecedor    String?
+  nome                String
+
+  categoriaId         String
+  categoria           CategoriaProduto  @relation(fields: [categoriaId], references: [id])
+
+  marcaId             String
+  marca               Marca             @relation(fields: [marcaId], references: [id])
+
+  fornecedorId        String?
+  fornecedor          Fornecedor?       @relation(fields: [fornecedorId], references: [id])
+
+  custo               Decimal           @db.Decimal(12,2)
+  precoVenda          Decimal           @db.Decimal(12,2)
+
+  estoqueAtual        Int               @default(0)
+  estoqueMinimo       Int               @default(0)
+
+  localizacaoFisica   String?
+  ativo               Boolean           @default(true)
+  compatibilidades    ProdutoModelo[]
+  movimentacoes      MovimentacaoEstoque[]
+  auditorias        AuditoriaProduto[]
+
+
+
+
+  criadoEm            DateTime          @default(now())
+  atualizadoEm        DateTime          @updatedAt
+
+  @@index([nome])
+  @@index([categoriaId])
+  @@index([marcaId])
+  @@index([fornecedorId])
+  @@map("produtos")
+}
+
+model ModeloAparelho {
+  id                 String           @id @default(uuid())
+  fabricante         String
+  nome               String
+  variante           String?
+
+  compatibilidades   ProdutoModelo[]
+
+  criadoEm           DateTime         @default(now())
+  atualizadoEm       DateTime         @updatedAt
+
+  @@index([fabricante])
+  @@index([nome])
+  @@map("modelos_aparelho")
+}
+
+model ProdutoModelo {
+  produtoId          String
+  modeloId           String
+
+  produto            Produto          @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  modelo             ModeloAparelho   @relation(fields: [modeloId], references: [id], onDelete: Cascade)
+
+  criadoEm           DateTime         @default(now())
+
+  @@id([produtoId, modeloId])
+  @@index([produtoId])
+  @@index([modeloId])
+  @@map("produto_modelos")
+}
+
+
+model MovimentacaoEstoque {
+  id                 String    @id @default(uuid())
+
+  produtoId          String
+  produto            Produto   @relation(fields: [produtoId], references: [id])
+
+  tipo               String
+
+  quantidade         Int
+
+  estoqueAnterior    Int
+  estoquePosterior   Int
+
+  observacao         String?
+
+  criadoEm           DateTime  @default(now())
+
+  @@index([produtoId])
+  @@index([tipo])
+  @@index([criadoEm])
+
+  @@map("movimentacoes_estoque")
+}
+
+model AuditoriaProduto {
+  id           String   @id @default(uuid())
+
+  produtoId    String
+  usuarioId    String
+
+  produto      Produto  @relation(fields: [produtoId], references: [id])
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id])
+
+
+  acao         String
+
+  dadosAntes   Json?
+  dadosDepois  Json?
+
+  criadoEm     DateTime @default(now())
+
+  @@index([produtoId])
+  @@index([usuarioId])
+  @@index([acao])
+
+  @@map("auditoria_produtos")
 }
 
 model RefreshToken {
@@ -94,3 +233,73 @@ model RefreshToken {
 
   @@map("refresh_tokens")
 }
+
+model Modulo {
+  id            String       @id @default(uuid())
+  codigo        String       @unique
+  nome          String
+  descricao     String?
+
+  telas         Tela[]
+
+  criadoEm      DateTime     @default(now())
+  atualizadoEm  DateTime     @updatedAt
+
+  @@index([codigo])
+  @@map("modulos")
+}
+
+model Tela {
+  id            String       @id @default(uuid())
+  moduloId      String
+
+  codigo        String
+  nome          String
+  descricao     String?
+
+  modulo        Modulo       @relation(fields: [moduloId], references: [id], onDelete: Cascade)
+  permissoes    Permissao[]
+
+  criadoEm      DateTime     @default(now())
+  atualizadoEm  DateTime     @updatedAt
+
+  @@unique([moduloId, codigo])
+  @@index([moduloId])
+  @@map("telas")
+}
+
+model Permissao {
+  id            String       @id @default(uuid())
+  telaId        String
+
+  codigo        String
+  nome          String
+  descricao     String?
+
+  tela          Tela         @relation(fields: [telaId], references: [id], onDelete: Cascade)
+  perfis        PerfilPermissao[]
+
+  criadoEm      DateTime     @default(now())
+  atualizadoEm  DateTime     @updatedAt
+
+  @@unique([telaId, codigo])
+  @@index([telaId])
+  @@map("permissoes")
+}
+
+model PerfilPermissao {
+  perfilId      String
+  permissaoId   String
+
+  perfil        Perfil       @relation(fields: [perfilId], references: [id], onDelete: Cascade)
+  permissao     Permissao    @relation(fields: [permissaoId], references: [id], onDelete: Cascade)
+
+  criadoEm      DateTime     @default(now())
+
+  @@id([perfilId, permissaoId])
+  @@index([perfilId])
+  @@index([permissaoId])
+
+  @@map("perfil_permissoes")
+}
+

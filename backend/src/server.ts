@@ -1,6 +1,8 @@
 import express from "express";
 
 import authRoutes from "./modules/auth/auth.routes.js";
+import categoriaRoutes from "./modules/produtos/categoria.routes.js";
+
 
 import { authMiddleware } from "./middlewares/auth.middleware.js";
 import { permissionMiddleware } from "./middlewares/permission.middleware.js";
@@ -19,10 +21,9 @@ app.get("/", (_req, res) => {
 app.get(
   "/admin",
   authMiddleware,
-  permissionMiddleware([
-    "Administrador",
-    "Gerente"
-  ]),
+    permissionMiddleware(
+      "produtos.menu.visualizar"
+    ),
   (_req, res) => {
     res.json({
       message: "Área Administrativa Liberada"
@@ -31,6 +32,8 @@ app.get(
 );
 
 app.use("/auth", authRoutes);
+app.use("/produtos/categorias", categoriaRoutes);
+
 
 const PORT = 4000;
 

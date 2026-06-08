@@ -9,7 +9,7 @@ class HomePage extends StatelessWidget {
   ) {
     return Card(
       child: InkWell(
-        onTap: () {},
+        onTap: onTap,
         child: SizedBox(
           width: 220,
           height: 130,
