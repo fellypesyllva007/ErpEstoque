@@ -8,124 +8,105 @@ datasource db {
 }
 
 model Perfil {
-  id          String    @id @default(uuid())
-  nome        String    @unique
-  descricao   String?
-
-  usuarios    Usuario[]
-  permissoes PerfilPermissao[]
-
-  criadoEm    DateTime  @default(now())
-  atualizadoEm DateTime @updatedAt
+  id           String            @id @default(uuid())
+  nome         String            @unique
+  descricao    String?
+  criadoEm     DateTime          @default(now())
+  atualizadoEm DateTime          @updatedAt
+  permissoes   PerfilPermissao[]
+  usuarios     Usuario[]
 
   @@map("perfis")
 }
 
 model Usuario {
-  id            String    @id @default(uuid())
-
-  nome          String
-  email         String    @unique
-  usuario       String    @unique
-
-  senhaHash     String
-
-  ativo         Boolean   @default(true)
-
-  perfilId      String
-  perfil        Perfil    @relation(fields: [perfilId], references: [id])
-  refreshTokens RefreshToken[]
+  id                String             @id @default(uuid())
+  nome              String
+  email             String             @unique
+  usuario           String             @unique
+  senhaHash         String
+  ativo             Boolean            @default(true)
+  perfilId          String
+  ultimoLogin       DateTime?
+  criadoEm          DateTime           @default(now())
+  atualizadoEm      DateTime           @updatedAt
+  auditoriasGerais  AuditoriaGeral[]   @relation("AuditoriaUsuario")
   auditoriasProduto AuditoriaProduto[]
-
-
-  ultimoLogin   DateTime?
-
-  criadoEm      DateTime  @default(now())
-  atualizadoEm  DateTime  @updatedAt
+  ordens            OrdemServico[]
+  refreshTokens     RefreshToken[]
+  perfil            Perfil             @relation(fields: [perfilId], references: [id])
 
   @@index([usuario])
   @@index([email])
-
   @@map("usuarios")
 }
 
 model CategoriaProduto {
-  id            String    @id @default(uuid())
-  nome          String    @unique
-  descricao     String?
-  produtos      Produto[]
-
-
-  criadoEm      DateTime  @default(now())
-  atualizadoEm  DateTime  @updatedAt
+  id           String    @id @default(uuid())
+  nome         String    @unique
+  descricao    String?
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @updatedAt
+  produtos     Produto[]
 
   @@map("categorias_produto")
 }
+
 model Marca {
-  id            String    @id @default(uuid())
-  nome          String    @unique
-  descricao     String?
-  produtos      Produto[]
-
-
-  criadoEm      DateTime  @default(now())
-  atualizadoEm  DateTime  @updatedAt
+  id           String    @id @default(uuid())
+  nome         String    @unique
+  descricao    String?
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @updatedAt
+  produtos     Produto[]
 
   @@map("marcas")
 }
 
-
 model Fornecedor {
-  id            String    @id @default(uuid())
-  nome          String
-  razaoSocial   String?
-  cnpj          String?   @unique
-  telefone      String?
-  email         String?
-  contato       String?
-
-  produtos      Produto[]
-
-  ativo         Boolean   @default(true)
-
-  criadoEm      DateTime  @default(now())
-  atualizadoEm  DateTime  @updatedAt
+  id           String         @id @default(uuid())
+  nome         String
+  razaoSocial  String?
+  cnpj         String?        @unique
+  telefone     String?
+  email        String?
+  contato      String?
+  ativo        Boolean        @default(true)
+  criadoEm     DateTime       @default(now())
+  atualizadoEm DateTime       @updatedAt
+  pedidos      PedidoCompra[]
+  produtos     Produto[]
 
   @@index([nome])
   @@map("fornecedores")
 }
+
 model Produto {
-  id                  String            @id @default(uuid())
-  codigoInterno       String            @unique
-  codigoFornecedor    String?
-  nome                String
-
-  categoriaId         String
-  categoria           CategoriaProduto  @relation(fields: [categoriaId], references: [id])
-
-  marcaId             String
-  marca               Marca             @relation(fields: [marcaId], references: [id])
-
-  fornecedorId        String?
-  fornecedor          Fornecedor?       @relation(fields: [fornecedorId], references: [id])
-
-  custo               Decimal           @db.Decimal(12,2)
-  precoVenda          Decimal           @db.Decimal(12,2)
-
-  estoqueAtual        Int               @default(0)
-  estoqueMinimo       Int               @default(0)
-
-  localizacaoFisica   String?
-  ativo               Boolean           @default(true)
-  compatibilidades    ProdutoModelo[]
-  movimentacoes      MovimentacaoEstoque[]
+  id                String                @id @default(uuid())
+  codigoInterno     String                @unique
+  codigoFornecedor  String?
+  nome              String
+  categoriaId       String
+  marcaId           String
+  fornecedorId      String?
+  custo             Decimal               @db.Decimal(12, 2)
+  precoVenda        Decimal               @db.Decimal(12, 2)
+  estoqueAtual      Int                   @default(0)
+  estoqueMinimo     Int                   @default(0)
+  localizacaoFisica String?
+  ativo             Boolean               @default(true)
+  criadoEm          DateTime              @default(now())
+  atualizadoEm      DateTime              @updatedAt
   auditorias        AuditoriaProduto[]
-
-
-
-
-  criadoEm            DateTime          @default(now())
-  atualizadoEm        DateTime          @updatedAt
+  itensOS           ItemOS[]
+  itensPedido       ItemPedidoCompra[]
+  itensRecebimento  ItemRecebimento[]
+  itensVenda        ItemVenda[]
+  movimentacoes     MovimentacaoEstoque[]
+  compatibilidades  ProdutoModelo[]
+  categoria         CategoriaProduto      @relation(fields: [categoriaId], references: [id])
+  fornecedor        Fornecedor?           @relation(fields: [fornecedorId], references: [id])
+  marca             Marca                 @relation(fields: [marcaId], references: [id])
 
   @@index([nome])
   @@index([categoriaId])
@@ -135,15 +116,13 @@ model Produto {
 }
 
 model ModeloAparelho {
-  id                 String           @id @default(uuid())
-  fabricante         String
-  nome               String
-  variante           String?
-
-  compatibilidades   ProdutoModelo[]
-
-  criadoEm           DateTime         @default(now())
-  atualizadoEm       DateTime         @updatedAt
+  id               String          @id @default(uuid())
+  fabricante       String
+  nome             String
+  variante         String?
+  criadoEm         DateTime        @default(now())
+  atualizadoEm     DateTime        @updatedAt
+  compatibilidades ProdutoModelo[]
 
   @@index([fabricante])
   @@index([nome])
@@ -151,13 +130,11 @@ model ModeloAparelho {
 }
 
 model ProdutoModelo {
-  produtoId          String
-  modeloId           String
-
-  produto            Produto          @relation(fields: [produtoId], references: [id], onDelete: Cascade)
-  modelo             ModeloAparelho   @relation(fields: [modeloId], references: [id], onDelete: Cascade)
-
-  criadoEm           DateTime         @default(now())
+  produtoId String
+  modeloId  String
+  criadoEm  DateTime       @default(now())
+  modelo    ModeloAparelho @relation(fields: [modeloId], references: [id], onDelete: Cascade)
+  produto   Produto        @relation(fields: [produtoId], references: [id], onDelete: Cascade)
 
   @@id([produtoId, modeloId])
   @@index([produtoId])
@@ -165,103 +142,77 @@ model ProdutoModelo {
   @@map("produto_modelos")
 }
 
-
 model MovimentacaoEstoque {
-  id                 String    @id @default(uuid())
-
-  produtoId          String
-  produto            Produto   @relation(fields: [produtoId], references: [id])
-
-  tipo               String
-
-  quantidade         Int
-
-  estoqueAnterior    Int
-  estoquePosterior   Int
-
-  observacao         String?
-
-  criadoEm           DateTime  @default(now())
+  id               String   @id @default(uuid())
+  produtoId        String
+  tipo             String
+  quantidade       Int
+  estoqueAnterior  Int
+  estoquePosterior Int
+  observacao       String?
+  criadoEm         DateTime @default(now())
+  produto          Produto  @relation(fields: [produtoId], references: [id])
 
   @@index([produtoId])
   @@index([tipo])
   @@index([criadoEm])
-
   @@map("movimentacoes_estoque")
 }
 
 model AuditoriaProduto {
-  id           String   @id @default(uuid())
-
-  produtoId    String
-  usuarioId    String
-
-  produto      Produto  @relation(fields: [produtoId], references: [id])
-  usuario      Usuario  @relation(fields: [usuarioId], references: [id])
-
-
-  acao         String
-
-  dadosAntes   Json?
-  dadosDepois  Json?
-
-  criadoEm     DateTime @default(now())
+  id          String   @id @default(uuid())
+  produtoId   String
+  usuarioId   String
+  acao        String
+  dadosAntes  Json?
+  dadosDepois Json?
+  criadoEm    DateTime @default(now())
+  produto     Produto  @relation(fields: [produtoId], references: [id])
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id])
 
   @@index([produtoId])
   @@index([usuarioId])
   @@index([acao])
-
   @@map("auditoria_produtos")
 }
 
 model RefreshToken {
-  id            String    @id @default(uuid())
-
-  usuarioId     String
-  usuario       Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-
-  token         String    @unique
-
-  expiraEm      DateTime
-
-  revogado      Boolean   @default(false)
-
-  criadoEm      DateTime  @default(now())
+  id        String   @id @default(uuid())
+  usuarioId String
+  token     String   @unique
+  expiraEm  DateTime
+  revogado  Boolean  @default(false)
+  criadoEm  DateTime @default(now())
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
 
   @@index([usuarioId])
   @@index([token])
-
   @@map("refresh_tokens")
 }
 
 model Modulo {
-  id            String       @id @default(uuid())
-  codigo        String       @unique
-  nome          String
-  descricao     String?
-
-  telas         Tela[]
-
-  criadoEm      DateTime     @default(now())
-  atualizadoEm  DateTime     @updatedAt
+  id           String   @id @default(uuid())
+  codigo       String   @unique
+  nome         String
+  descricao    String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  telas        Tela[]
 
   @@index([codigo])
   @@map("modulos")
 }
 
 model Tela {
-  id            String       @id @default(uuid())
-  moduloId      String
-
-  codigo        String
-  nome          String
-  descricao     String?
-
-  modulo        Modulo       @relation(fields: [moduloId], references: [id], onDelete: Cascade)
-  permissoes    Permissao[]
-
-  criadoEm      DateTime     @default(now())
-  atualizadoEm  DateTime     @updatedAt
+  id           String      @id @default(uuid())
+  moduloId     String
+  codigo       String
+  nome         String
+  descricao    String?
+  criadoEm     DateTime    @default(now())
+  atualizadoEm DateTime    @updatedAt
+  permissoes   Permissao[]
+  modulo       Modulo      @relation(fields: [moduloId], references: [id], onDelete: Cascade)
 
   @@unique([moduloId, codigo])
   @@index([moduloId])
@@ -269,18 +220,15 @@ model Tela {
 }
 
 model Permissao {
-  id            String       @id @default(uuid())
-  telaId        String
-
-  codigo        String
-  nome          String
-  descricao     String?
-
-  tela          Tela         @relation(fields: [telaId], references: [id], onDelete: Cascade)
-  perfis        PerfilPermissao[]
-
-  criadoEm      DateTime     @default(now())
-  atualizadoEm  DateTime     @updatedAt
+  id           String            @id @default(uuid())
+  telaId       String
+  codigo       String
+  nome         String
+  descricao    String?
+  criadoEm     DateTime          @default(now())
+  atualizadoEm DateTime          @updatedAt
+  perfis       PerfilPermissao[]
+  tela         Tela              @relation(fields: [telaId], references: [id], onDelete: Cascade)
 
   @@unique([telaId, codigo])
   @@index([telaId])
@@ -288,18 +236,227 @@ model Permissao {
 }
 
 model PerfilPermissao {
-  perfilId      String
-  permissaoId   String
-
-  perfil        Perfil       @relation(fields: [perfilId], references: [id], onDelete: Cascade)
-  permissao     Permissao    @relation(fields: [permissaoId], references: [id], onDelete: Cascade)
-
-  criadoEm      DateTime     @default(now())
+  perfilId    String
+  permissaoId String
+  criadoEm    DateTime  @default(now())
+  perfil      Perfil    @relation(fields: [perfilId], references: [id], onDelete: Cascade)
+  permissao   Permissao @relation(fields: [permissaoId], references: [id], onDelete: Cascade)
 
   @@id([perfilId, permissaoId])
   @@index([perfilId])
   @@index([permissaoId])
-
   @@map("perfil_permissoes")
 }
 
+model Cliente {
+  id           String         @id @default(uuid())
+  nome         String
+  cpf          String?        @unique
+  telefone     String?
+  email        String?
+  endereco     String?
+  ativo        Boolean        @default(true)
+  criadoEm     DateTime       @default(now())
+  atualizadoEm DateTime       @updatedAt
+  ordens       OrdemServico[]
+  vendas       Venda[]
+
+  @@index([nome])
+  @@map("clientes")
+}
+
+model OrdemServico {
+  id                String    @id @default(uuid())
+  numero            String    @unique
+  clienteId         String
+  aparelho          String
+  modelo            String
+  imei              String?
+  descricaoProblema String
+  laudoTecnico      String?
+  solucaoAplicada   String?
+  status            String    @default("ABERTA")
+  tecnicoId         String?
+  valorServico      Decimal?  @db.Decimal(12, 2)
+  observacoes       String?
+  dataPrevisao      DateTime?
+  dataConclusao     DateTime?
+  criadoEm          DateTime  @default(now())
+  atualizadoEm      DateTime  @updatedAt
+  garantiaDias      Int?      @default(90)
+  valorMaoObra      Decimal?  @db.Decimal(12, 2)
+  itens             ItemOS[]
+  cliente           Cliente   @relation(fields: [clienteId], references: [id])
+  tecnico           Usuario?  @relation(fields: [tecnicoId], references: [id])
+
+  @@index([clienteId])
+  @@index([status])
+  @@map("ordens_servico")
+}
+
+model PedidoCompra {
+  id           String              @id @default(uuid())
+  numero       String              @unique
+  fornecedorId String
+  status       String              @default("RASCUNHO")
+  observacoes  String?
+  valorTotal   Decimal             @default(0) @db.Decimal(12, 2)
+  criadoEm     DateTime            @default(now())
+  atualizadoEm DateTime            @updatedAt
+  itens        ItemPedidoCompra[]
+  fornecedor   Fornecedor          @relation(fields: [fornecedorId], references: [id])
+  recebimentos RecebimentoCompra[]
+
+  @@index([fornecedorId])
+  @@index([status])
+  @@map("pedidos_compra")
+}
+
+model ItemPedidoCompra {
+  id            String       @id @default(uuid())
+  pedidoId      String
+  produtoId     String
+  quantidade    Int
+  qtdRecebida   Int          @default(0)
+  custoUnitario Decimal      @db.Decimal(12, 2)
+  criadoEm      DateTime     @default(now())
+  pedido        PedidoCompra @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  produto       Produto      @relation(fields: [produtoId], references: [id])
+
+  @@index([pedidoId])
+  @@index([produtoId])
+  @@map("itens_pedido_compra")
+}
+
+model RecebimentoCompra {
+  id          String            @id @default(uuid())
+  pedidoId    String
+  observacoes String?
+  criadoEm    DateTime          @default(now())
+  itens       ItemRecebimento[]
+  pedido      PedidoCompra      @relation(fields: [pedidoId], references: [id])
+
+  @@index([pedidoId])
+  @@map("recebimentos_compra")
+}
+
+model ItemRecebimento {
+  id            String            @id @default(uuid())
+  recebimentoId String
+  produtoId     String
+  quantidade    Int
+  criadoEm      DateTime          @default(now())
+  produto       Produto           @relation(fields: [produtoId], references: [id])
+  recebimento   RecebimentoCompra @relation(fields: [recebimentoId], references: [id], onDelete: Cascade)
+
+  @@index([recebimentoId])
+  @@map("itens_recebimento")
+}
+
+model Venda {
+  id             String      @id @default(uuid())
+  numero         String      @unique
+  clienteId      String?
+  status         String      @default("ABERTA")
+  formaPagamento String?
+  desconto       Decimal     @default(0) @db.Decimal(12, 2)
+  valorTotal     Decimal     @default(0) @db.Decimal(12, 2)
+  observacoes    String?
+  criadoEm       DateTime    @default(now())
+  atualizadoEm   DateTime    @updatedAt
+  itens          ItemVenda[]
+  cliente        Cliente?    @relation(fields: [clienteId], references: [id])
+
+  @@index([clienteId])
+  @@index([status])
+  @@index([criadoEm])
+  @@map("vendas")
+}
+
+model ItemVenda {
+  id            String   @id @default(uuid())
+  vendaId       String
+  produtoId     String
+  quantidade    Int
+  precoUnitario Decimal  @db.Decimal(12, 2)
+  desconto      Decimal  @default(0) @db.Decimal(12, 2)
+  criadoEm      DateTime @default(now())
+  produto       Produto  @relation(fields: [produtoId], references: [id])
+  venda         Venda    @relation(fields: [vendaId], references: [id], onDelete: Cascade)
+
+  @@index([vendaId])
+  @@index([produtoId])
+  @@map("itens_venda")
+}
+
+model ItemOS {
+  id            String       @id @default(uuid())
+  ordemId       String
+  produtoId     String
+  quantidade    Int
+  precoUnitario Decimal      @db.Decimal(12, 2)
+  criadoEm      DateTime     @default(now())
+  ordem         OrdemServico @relation(fields: [ordemId], references: [id], onDelete: Cascade)
+  produto       Produto      @relation(fields: [produtoId], references: [id])
+
+  @@index([ordemId])
+  @@index([produtoId])
+  @@map("itens_os")
+}
+
+model AuditoriaGeral {
+  id          String   @id @default(uuid())
+  usuarioId   String?
+  tabela      String
+  registro    String
+  acao        String
+  dadosAntes  Json?
+  dadosDepois Json?
+  ip          String?
+  criadoEm    DateTime @default(now())
+  usuario     Usuario? @relation("AuditoriaUsuario", fields: [usuarioId], references: [id])
+
+  @@index([tabela])
+  @@index([usuarioId])
+  @@index([criadoEm])
+  @@map("auditoria_geral")
+}
+
+model ConfiguracaoSistema {
+  id                        String    @id @default(uuid())
+
+  empresaId                 String?
+  cnpj                      String?
+  nomeEmpresa               String?
+
+  instalacaoId              String?   @unique
+  hardwareFingerprint       String?
+
+  versaoSistema             String?
+
+  licencaStatus             String?
+  licencaPlano              String?
+
+  licencaEmitidaEm          DateTime?
+  licencaExpiraEm           DateTime?
+
+  ultimaValidacaoLicenca    DateTime?
+  proximaValidacaoLicenca   DateTime?
+  ultimaSincronizacaoApi    DateTime?
+
+  activationHash            String?
+
+  licencaArquivoHash        String?
+  licencaArquivoRecebidoEm  DateTime?
+
+  // Controle de Replay/Downgrade Attack
+  nonceLicenca              Int?
+
+  criadoEm                  DateTime @default(now())
+  atualizadoEm              DateTime @updatedAt
+
+  @@index([cnpj])
+  @@index([licencaStatus])
+
+  @@map("configuracoes_sistema")
+}

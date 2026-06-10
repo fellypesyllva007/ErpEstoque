@@ -1,9 +1,9 @@
 name: erp_estoque
-description: ERP Assistência Técnica e Controle de Estoque
+description: ERP Assistência Técnica — multiplataforma (Windows, Web, Android, Linux)
 
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 2.0.0+1
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -12,15 +12,27 @@ dependencies:
   flutter:
     sdk: flutter
 
-  cupertino_icons: ^1.0.8
+  # HTTP e persistência
   http: ^1.2.1
   provider: ^6.1.2
-  shared_preferences: ^2.2.3
+  shared_preferences: ^2.3.5
+
+  # Arquivos — funciona em Windows, Android, Linux (não em Web — abstração cuida disso)
+  path_provider: ^2.1.4       # IO apenas
+  file_picker: ^8.1.2         # IO + Web (via bytes)
+
+  # URL / links externos (IO apenas — Web usa dart:html diretamente)
+  url_launcher: ^6.3.1
+
+  # UI
+  cupertino_icons: ^1.0.8
+
+  # Scanner de câmera (opcional — habilitar quando pronto)
+  # mobile_scanner: ^5.2.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
   flutter_lints: ^6.0.0
 
 flutter:

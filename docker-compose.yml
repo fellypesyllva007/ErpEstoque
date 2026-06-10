@@ -1,23 +1,49 @@
+version: "3.9"
+
 services:
-  erp-postgres:
+  postgres:
     image: postgres:16-alpine
-    container_name: erp-postgres
-
+    container_name: erp_postgres
     restart: unless-stopped
-
     environment:
-      POSTGRES_DB: erpestoque
       POSTGRES_USER: erpuser
       POSTGRES_PASSWORD: erp123456
-
+      POSTGRES_DB: erpestoque
     ports:
       - "5433:5432"
-
     volumes:
-      - ./database/postgres:/var/lib/postgresql/data
-
+      - erp_pgdata:/var/lib/postgresql/data
+    networks:
+      - erp_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U erpuser -d erpestoque"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: erp_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://erpuser:erp123456@postgres:5432/erpestoque
+      JWT_SECRET: ${JWT_SECRET:-mude_este_secret_em_producao}
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - erp_net
+    volumes:
+      - ./backend/backups:/var/backups/erp
+
+volumes:
+  erp_pgdata:
+
+networks:
+  erp_net:
+    driver: bridge

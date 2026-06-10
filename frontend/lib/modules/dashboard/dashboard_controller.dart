@@ -1,12 +1,10 @@
+import 'dashboard_service.dart';
+
 class DashboardController {
-  Future<Map<String, dynamic>> carregarIndicadores() async {
-    return {
-      'vendasHoje': 0,
-      'faturamentoHoje': 0,
-      'osAbertas': 0,
-      'osConcluidas': 0,
-      'estoqueBaixo': 0,
-      'estoqueZerado': 0,
-    };
-  }
+  final _service = DashboardService();
+
+  Future<Map<String, dynamic>> carregarIndicadores() => _service.carregarIndicadores();
+  Future<List<dynamic>> movimentacoesRecentes() => _service.movimentacoesRecentes();
+  Future<List<dynamic>> alertasEstoque() => _service.alertasEstoque();
+  Future<Map<String, dynamic>> indicadoresVendas() => _service.indicadoresVendas();
 }
