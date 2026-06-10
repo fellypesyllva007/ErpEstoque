@@ -1,42 +1,70 @@
 import express from "express";
+import cors from "cors";
 
 import authRoutes from "./modules/auth/auth.routes.js";
 import categoriaRoutes from "./modules/produtos/categoria.routes.js";
-
-
-import { authMiddleware } from "./middlewares/auth.middleware.js";
-import { permissionMiddleware } from "./middlewares/permission.middleware.js";
+import marcaRoutes from "./modules/marcas/marca.routes.js";
+import fornecedorRoutes from "./modules/fornecedores/fornecedor.routes.js";
+import produtoRoutes from "./modules/produtos/produto.routes.js";
+import estoqueRoutes from "./modules/estoque/estoque.routes.js";
+import clienteRoutes from "./modules/clientes/cliente.routes.js";
+import osRoutes from "./modules/os/os.routes.js";
+import usuarioRoutes from "./modules/usuarios/usuario.routes.js";
+import dashboardRoutes from "./modules/dashboard/dashboard.routes.js";
+import compraRoutes from "./modules/compras/compra.routes.js";
+import vendaRoutes from "./modules/vendas/venda.routes.js";
+import relatoriosRoutes from "./modules/relatorios/relatorios.routes.js";
+import notificacoesRoutes from "./modules/notificacoes/notificacoes.routes.js";
+import { LicenciamentoService } from "./modules/licenciamento/licenciamento.service.js";
+import licenciamentoRoutes from "./modules/licenciamento/licenciamento.routes.js";
 
 const app = express();
 
-app.use(express.json());
+app.use(cors({
+  origin: "*",
+  methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
+  allowedHeaders: ["Content-Type","Authorization"],
+  credentials: false,
+}));
+app.options("/*splat", cors()); // preflight
+app.use(express.json({ limit: "10mb" }));
 
-app.get("/", (_req, res) => {
-  res.json({
-    sistema: "ERP Estoque",
-    status: "online"
-  });
-});
-
-app.get(
-  "/admin",
-  authMiddleware,
-    permissionMiddleware(
-      "produtos.menu.visualizar"
-    ),
-  (_req, res) => {
-    res.json({
-      message: "Área Administrativa Liberada"
-    });
-  }
-);
+app.get("/health", (_req, res) => res.json({ status: "ok", ts: new Date().toISOString() }));
+app.get("/", (_req, res) => res.json({ sistema: "ERP Estoque v2", status: "online" }));
 
 app.use("/auth", authRoutes);
+app.use("/dashboard", dashboardRoutes);
+app.use("/licenciamento", licenciamentoRoutes);
+app.use("/notificacoes", notificacoesRoutes);
 app.use("/produtos/categorias", categoriaRoutes);
+app.use("/produtos/marcas", marcaRoutes);
+app.use("/produtos", produtoRoutes);
+app.use("/estoque", estoqueRoutes);
+app.use("/fornecedores", fornecedorRoutes);
+app.use("/clientes", clienteRoutes);
+app.use("/os", osRoutes);
+app.use("/compras", compraRoutes);
+app.use("/vendas", vendaRoutes);
+app.use("/relatorios", relatoriosRoutes);
+app.use("/usuarios", usuarioRoutes);
 
+// Error handler global
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(err.stack);
+  res.status(500).json({ message: "Erro interno do servidor" });
+});
 
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 
-app.listen(PORT, () => {
-  console.log(`ERP Backend rodando na porta ${PORT}`);
+async function bootstrap() {
+  await new LicenciamentoService().inicializar();
+
+  app.listen(PORT, () =>
+    console.log(`ERP Backend v2 rodando na porta ${PORT}`)
+  );
+}
+
+bootstrap().catch((error) => {
+  console.error("[BOOTSTRAP]", error);
+  process.exit(1);
 });

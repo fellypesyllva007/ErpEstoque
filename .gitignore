@@ -20,3 +20,14 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Backups
+*.bkp
+
+# Pacotes gerados
+*.zip
+
+# PostgreSQL local
+database/postgres/
+
+backend/.env
