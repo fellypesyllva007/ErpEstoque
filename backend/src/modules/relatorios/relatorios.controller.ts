@@ -1,34 +1,35 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { RelatoriosService } from "./relatorios.service.js";
+import { TenantRequest } from "../../core/tenant.js";
 
 export class RelatoriosController {
   private s = new RelatoriosService();
 
-  async estoqueCompleto(_req: Request, res: Response) {
-    return res.json(await this.s.estoqueCompleto());
+  async estoqueCompleto(req: TenantRequest, res: Response) {
+    return res.json(await this.s.estoqueCompleto(req.tenant!));
   }
 
-  async movimentacoes(req: Request, res: Response) {
+  async movimentacoes(req: TenantRequest, res: Response) {
     const { dataInicio, dataFim } = req.query;
-    return res.json(await this.s.movimentacoesDetalhadas(dataInicio as string, dataFim as string));
+    return res.json(await this.s.movimentacoesDetalhadas(req.tenant!, dataInicio as string, dataFim as string));
   }
 
-  async sugestaoReposicao(_req: Request, res: Response) {
-    return res.json(await this.s.sugestaoReposicao());
+  async sugestaoReposicao(req: TenantRequest, res: Response) {
+    return res.json(await this.s.sugestaoReposicao(req.tenant!));
   }
 
-  async vendas(req: Request, res: Response) {
+  async vendas(req: TenantRequest, res: Response) {
     const { dataInicio = "", dataFim = "" } = req.query;
-    return res.json(await this.s.vendasPorPeriodo(dataInicio as string, dataFim as string));
+    return res.json(await this.s.vendasPorPeriodo(req.tenant!, dataInicio as string, dataFim as string));
   }
 
-  async compras(req: Request, res: Response) {
+  async compras(req: TenantRequest, res: Response) {
     const { dataInicio = "", dataFim = "" } = req.query;
-    return res.json(await this.s.comprasPorPeriodo(dataInicio as string, dataFim as string));
+    return res.json(await this.s.comprasPorPeriodo(req.tenant!, dataInicio as string, dataFim as string));
   }
 
-  async auditoria(req: Request, res: Response) {
+  async auditoria(req: TenantRequest, res: Response) {
     const { tabela, dataInicio, dataFim } = req.query;
-    return res.json(await this.s.auditoria(tabela as string, dataInicio as string, dataFim as string));
+    return res.json(await this.s.auditoria(req.tenant!, tabela as string, dataInicio as string, dataFim as string));
   }
 }

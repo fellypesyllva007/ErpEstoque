@@ -1,5 +1,6 @@
 import { prisma } from "../../core/prisma/prisma.js";
 import { registrarAuditoria } from "../../core/auditoria.js";
+import { TenantContext, tenantCreate, tenantWhere } from "../../core/tenant.js";
 import { CriarDocumentoFiscalDto, AtualizarStatusFiscalDto } from "./fiscal.types.js";
 import { NfeWebClient } from "./nfeweb/nfeweb.client.js";
 
@@ -14,9 +15,10 @@ function calcularTotalItem(quantidade: number, valorUnitario: number, desconto =
 export class FiscalService {
   private readonly nfeWeb = new NfeWebClient();
 
-  async listar(params: { status?: string; vendaId?: string; ordemServicoId?: string; ambienteFiscal?: string }) {
+  async listar(ctx: TenantContext, params: { status?: string; vendaId?: string; ordemServicoId?: string; ambienteFiscal?: string }) {
     return prisma.documentoFiscal.findMany({
       where: {
+        ...tenantWhere(ctx),
         ...(params.status ? { statusInterno: params.status } : {}),
         ...(params.vendaId ? { vendaId: params.vendaId } : {}),
         ...(params.ordemServicoId ? { ordemServicoId: params.ordemServicoId } : {}),
@@ -33,9 +35,9 @@ export class FiscalService {
     });
   }
 
-  async buscarPorId(id: string) {
-    return prisma.documentoFiscal.findUnique({
-      where: { id },
+  async buscarPorId(ctx: TenantContext, id: string) {
+    return prisma.documentoFiscal.findFirst({
+      where: { id, ...tenantWhere(ctx) },
       include: {
         cliente: true,
         venda: { include: { itens: { include: { produto: true } } } },
@@ -50,9 +52,9 @@ export class FiscalService {
     });
   }
 
-  async criarDaVenda(vendaId: string, data: CriarDocumentoFiscalDto, usuarioId: string) {
+  async criarDaVenda(ctx: TenantContext, vendaId: string, data: CriarDocumentoFiscalDto, usuarioId: string) {
     const venda = await prisma.venda.findUniqueOrThrow({
-      where: { id: vendaId },
+      where: { id: vendaId, ...tenantWhere(ctx) },
       include: {
         cliente: true,
         documentosFiscais: { where: { statusInterno: { notIn: ["CANCELADA", "INUTILIZADA"] } } },
@@ -64,7 +66,7 @@ export class FiscalService {
     if (venda.documentosFiscais.length > 0) throw new Error("Venda já possui documento fiscal ativo");
     if (venda.itens.length === 0) throw new Error("Venda sem itens para emissão fiscal");
 
-    const emitente = data.emitenteId ? await prisma.emitenteFiscal.findUnique({ where: { id: data.emitenteId } }) : null;
+    const emitente = data.emitenteId ? await prisma.emitenteFiscal.findFirst({ where: { id: data.emitenteId, filial: { empresaId: ctx.empresaId } } }) : null;
     const modelo = data.modelo ?? "55";
     const ambienteFiscal = data.ambienteFiscal ?? emitente?.ambienteFiscal ?? "HOMOLOGACAO";
     const serie = modelo === "65" ? (emitente?.serieNfce ?? 1) : (emitente?.serieNfe ?? 1);
@@ -72,8 +74,9 @@ export class FiscalService {
     const documento = await prisma.$transaction(async (tx) => {
       const doc = await tx.documentoFiscal.create({
         data: {
+          ...tenantCreate(ctx),
           emitenteId: emitente?.id,
-          filialId: emitente?.filialId,
+          filialId: emitente?.filialId ?? ctx.filialId,
           vendaId: venda.id,
           clienteId: venda.clienteId,
           clienteNome: venda.cliente?.nome ?? "Consumidor",
@@ -124,13 +127,13 @@ export class FiscalService {
       return doc;
     });
 
-    await registrarAuditoria({ usuarioId, tabela: "documentos_fiscais", registro: documento.id, acao: "CRIAR_DA_VENDA", dadosDepois: documento });
+    await registrarAuditoria({ usuarioId, tabela: "documentos_fiscais", registro: documento.id, acao: "CRIAR_DA_VENDA", dadosDepois: documento, tenant: ctx });
     return documento;
   }
 
-  async criarDaOS(ordemServicoId: string, data: CriarDocumentoFiscalDto, usuarioId: string) {
+  async criarDaOS(ctx: TenantContext, ordemServicoId: string, data: CriarDocumentoFiscalDto, usuarioId: string) {
     const ordem = await prisma.ordemServico.findUniqueOrThrow({
-      where: { id: ordemServicoId },
+      where: { id: ordemServicoId, ...tenantWhere(ctx) },
       include: { cliente: true, itens: { include: { produto: true } }, documentosFiscais: true },
     });
 
@@ -142,6 +145,7 @@ export class FiscalService {
 
     const documento = await prisma.documentoFiscal.create({
       data: {
+        ...tenantCreate(ctx),
         ordemServicoId: ordem.id,
         clienteId: ordem.clienteId,
         clienteNome: ordem.cliente.nome,
@@ -179,12 +183,12 @@ export class FiscalService {
     });
 
     await prisma.documentoFiscalStatusHistorico.create({ data: { documentoFiscalId: documento.id, statusNovo: "RASCUNHO", observacao: `Criado a partir da OS ${ordem.numero}` } });
-    await registrarAuditoria({ usuarioId, tabela: "documentos_fiscais", registro: documento.id, acao: "CRIAR_DA_OS", dadosDepois: documento });
+    await registrarAuditoria({ usuarioId, tabela: "documentos_fiscais", registro: documento.id, acao: "CRIAR_DA_OS", dadosDepois: documento, tenant: ctx });
     return documento;
   }
 
-  async atualizarStatus(id: string, data: AtualizarStatusFiscalDto, usuarioId: string) {
-    const anterior = await prisma.documentoFiscal.findUniqueOrThrow({ where: { id } });
+  async atualizarStatus(ctx: TenantContext, id: string, data: AtualizarStatusFiscalDto, usuarioId: string) {
+    const anterior = await prisma.documentoFiscal.findFirstOrThrow({ where: { id, ...tenantWhere(ctx) } });
     const atualizado = await prisma.$transaction(async (tx) => {
       const doc = await tx.documentoFiscal.update({
         where: { id },
@@ -203,26 +207,26 @@ export class FiscalService {
       await tx.documentoFiscalEvento.create({ data: { documentoFiscalId: id, tipo: "STATUS", status: data.statusInterno, protocolo: data.protocolo, justificativa: data.justificativa, retornoGateway: data.retornoGateway as never } });
       return doc;
     });
-    await registrarAuditoria({ usuarioId, tabela: "documentos_fiscais", registro: id, acao: "ATUALIZAR_STATUS", dadosAntes: anterior, dadosDepois: atualizado });
+    await registrarAuditoria({ usuarioId, tabela: "documentos_fiscais", registro: id, acao: "ATUALIZAR_STATUS", dadosAntes: anterior, dadosDepois: atualizado, tenant: ctx });
     return atualizado;
   }
 
-  async validar(id: string, usuarioId: string) {
-    const doc = await this.buscarPorId(id);
+  async validar(ctx: TenantContext, id: string, usuarioId: string) {
+    const doc = await this.buscarPorId(ctx, id);
     if (!doc) throw new Error("Documento fiscal não encontrado");
     const itensSemNcm = doc.itens.filter((item) => !item.ncm).map((item) => item.descricao);
     if (itensSemNcm.length > 0) throw new Error(`Produtos sem NCM: ${itensSemNcm.join(", ")}`);
-    return this.atualizarStatus(id, { statusInterno: "VALIDADA", statusSefaz: doc.statusSefaz ?? undefined }, usuarioId);
+    return this.atualizarStatus(ctx, id, { statusInterno: "VALIDADA", statusSefaz: doc.statusSefaz ?? undefined }, usuarioId);
   }
 
-  async transmitir(id: string, usuarioId: string) {
-    const doc = await this.buscarPorId(id);
+  async transmitir(ctx: TenantContext, id: string, usuarioId: string) {
+    const doc = await this.buscarPorId(ctx, id);
     if (!doc) throw new Error("Documento fiscal não encontrado");
     if (!["VALIDADA", "ASSINADA", "REJEITADA", "CONTINGENCIA"].includes(doc.statusInterno)) throw new Error("Documento precisa estar validado/assinado para transmissão");
 
     try {
       const retorno = await this.nfeWeb.post("/nfe/transmitir", { documentoFiscalId: id, payload: doc.payloadFiscal, itens: doc.itens });
-      return this.atualizarStatus(id, {
+      return this.atualizarStatus(ctx, id, {
         statusInterno: (retorno.statusInterno as string | undefined) === "AUTORIZADA" ? "AUTORIZADA" : "ENVIADA",
         statusSefaz: retorno.statusSefaz as string | undefined,
         protocolo: retorno.protocolo as string | undefined,
@@ -230,13 +234,13 @@ export class FiscalService {
         retornoGateway: retorno,
       }, usuarioId);
     } catch (error) {
-      return this.atualizarStatus(id, { statusInterno: "REJEITADA", justificativa: error instanceof Error ? error.message : "Falha ao transmitir" }, usuarioId);
+      return this.atualizarStatus(ctx, id, { statusInterno: "REJEITADA", justificativa: error instanceof Error ? error.message : "Falha ao transmitir" }, usuarioId);
     }
   }
 
-  async cancelar(id: string, justificativa: string | undefined, usuarioId: string) {
-    const doc = await prisma.documentoFiscal.findUniqueOrThrow({ where: { id } });
+  async cancelar(ctx: TenantContext, id: string, justificativa: string | undefined, usuarioId: string) {
+    const doc = await prisma.documentoFiscal.findFirstOrThrow({ where: { id, ...tenantWhere(ctx) } });
     if (!["AUTORIZADA", "ENVIADA"].includes(doc.statusInterno)) throw new Error("Somente documentos autorizados/enviados podem ser cancelados");
-    return this.atualizarStatus(id, { statusInterno: "CANCELADA", justificativa: justificativa ?? "Cancelamento solicitado pelo ERP" }, usuarioId);
+    return this.atualizarStatus(ctx, id, { statusInterno: "CANCELADA", justificativa: justificativa ?? "Cancelamento solicitado pelo ERP" }, usuarioId);
   }
 }

@@ -1,43 +1,48 @@
 import { prisma } from "../../core/prisma/prisma.js";
+import { TenantContext, tenantWhere } from "../../core/tenant.js";
 import {
   calcularSugestaoReposicaoProduto,
   deveExibirSugestaoReposicao,
 } from "../../core/business-rules.js";
 
+function intervalo(dataInicio?: string, dataFim?: string) {
+  return dataInicio || dataFim
+    ? {
+        criadoEm: {
+          ...(dataInicio ? { gte: new Date(dataInicio) } : {}),
+          ...(dataFim ? { lte: new Date(dataFim + "T23:59:59") } : {}),
+        },
+      }
+    : {};
+}
+
 export class RelatoriosService {
-  async estoqueCompleto() {
+  async estoqueCompleto(ctx: TenantContext) {
     return prisma.produto.findMany({
-      where: { ativo: true },
+      where: { ...tenantWhere(ctx), ativo: true },
       include: { categoria: true, marca: true, fornecedor: { select: { nome: true } } },
       orderBy: [{ categoria: { nome: "asc" } }, { nome: "asc" }],
     });
   }
 
-  async movimentacoesDetalhadas(dataInicio?: string, dataFim?: string) {
+  async movimentacoesDetalhadas(ctx: TenantContext, dataInicio?: string, dataFim?: string) {
     return prisma.movimentacaoEstoque.findMany({
-      where: {
-        ...(dataInicio || dataFim ? {
-          criadoEm: {
-            ...(dataInicio ? { gte: new Date(dataInicio) } : {}),
-            ...(dataFim ? { lte: new Date(dataFim + "T23:59:59") } : {}),
-          },
-        } : {}),
-      },
+      where: { ...tenantWhere(ctx), ...intervalo(dataInicio, dataFim) },
       include: { produto: { select: { nome: true, codigoInterno: true, categoria: { select: { nome: true } } } } },
       orderBy: { criadoEm: "desc" },
     });
   }
 
-  async sugestaoReposicao() {
+  async sugestaoReposicao(ctx: TenantContext) {
     const trintaDiasAtras = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
     const produtos = await prisma.produto.findMany({
-      where: { ativo: true },
+      where: { ...tenantWhere(ctx), ativo: true },
       include: { fornecedor: { select: { nome: true } } },
     });
 
     const movimentacoes = await prisma.movimentacaoEstoque.findMany({
-      where: { tipo: "SAIDA", criadoEm: { gte: trintaDiasAtras } },
+      where: { ...tenantWhere(ctx), tipo: "SAIDA", criadoEm: { gte: trintaDiasAtras } },
     });
 
     const saidaPorProduto: Record<string, number> = {};
@@ -46,54 +51,31 @@ export class RelatoriosService {
     }
 
     return produtos.map((produto) =>
-      calcularSugestaoReposicaoProduto(
-        produto,
-        saidaPorProduto[produto.id] ?? 0
-      )
+      calcularSugestaoReposicaoProduto(produto, saidaPorProduto[produto.id] ?? 0)
     )
     .filter(deveExibirSugestaoReposicao)
     .sort((a, b) => a.coberturaDias - b.coberturaDias);
   }
 
-  async vendasPorPeriodo(dataInicio: string, dataFim: string) {
+  async vendasPorPeriodo(ctx: TenantContext, dataInicio: string, dataFim: string) {
     return prisma.venda.findMany({
-      where: {
-        status: "CONCLUIDA",
-        criadoEm: { gte: new Date(dataInicio), lte: new Date(dataFim + "T23:59:59") },
-      },
-      include: {
-        cliente: { select: { nome: true } },
-        itens: { include: { produto: { select: { nome: true } } } },
-      },
+      where: { ...tenantWhere(ctx), status: "CONCLUIDA", ...intervalo(dataInicio, dataFim) },
+      include: { cliente: { select: { nome: true } }, itens: { include: { produto: { select: { nome: true } } } } },
       orderBy: { criadoEm: "desc" },
     });
   }
 
-  async comprasPorPeriodo(dataInicio: string, dataFim: string) {
+  async comprasPorPeriodo(ctx: TenantContext, dataInicio: string, dataFim: string) {
     return prisma.pedidoCompra.findMany({
-      where: {
-        status: { not: "CANCELADO" },
-        criadoEm: { gte: new Date(dataInicio), lte: new Date(dataFim + "T23:59:59") },
-      },
-      include: {
-        fornecedor: { select: { nome: true } },
-        itens: { include: { produto: { select: { nome: true } } } },
-      },
+      where: { ...tenantWhere(ctx), status: { not: "CANCELADO" }, ...intervalo(dataInicio, dataFim) },
+      include: { fornecedor: { select: { nome: true } }, itens: { include: { produto: { select: { nome: true } } } } },
       orderBy: { criadoEm: "desc" },
     });
   }
 
-  async auditoria(tabela?: string, dataInicio?: string, dataFim?: string) {
+  async auditoria(ctx: TenantContext, tabela?: string, dataInicio?: string, dataFim?: string) {
     return prisma.auditoriaGeral.findMany({
-      where: {
-        ...(tabela ? { tabela } : {}),
-        ...(dataInicio || dataFim ? {
-          criadoEm: {
-            ...(dataInicio ? { gte: new Date(dataInicio) } : {}),
-            ...(dataFim ? { lte: new Date(dataFim + "T23:59:59") } : {}),
-          },
-        } : {}),
-      },
+      where: { ...tenantWhere(ctx), ...(tabela ? { tabela } : {}), ...intervalo(dataInicio, dataFim) },
       orderBy: { criadoEm: "desc" },
       take: 500,
     });

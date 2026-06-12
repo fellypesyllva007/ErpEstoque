@@ -13,9 +13,14 @@ class ApiService {
 
   static Future<Map<String, String>> _headers() async {
     final token = await getToken();
+    final prefs = await SharedPreferences.getInstance();
+    final empresaId = prefs.getString('empresaId');
+    final filialId = prefs.getString('filialId');
     return {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
+      if (empresaId != null) 'X-Empresa-Id': empresaId,
+      if (filialId != null) 'X-Filial-Id': filialId,
     };
   }
 

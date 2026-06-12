@@ -6,7 +6,7 @@ import { criarRefreshToken, gerarAccessToken } from "../src/core/auth-tokens.js"
 
 test("login gera access token com identidade e perfil do usuário", () => {
   const token = gerarAccessToken(
-    { id: "user-1", usuario: "admin", perfil: "Administrador" },
+    { id: "user-1", usuario: "admin", perfil: "Administrador", empresaId: "emp-1", filialId: "fil-1" },
     "segredo-de-teste",
     "1h"
   );
@@ -15,6 +15,8 @@ test("login gera access token com identidade e perfil do usuário", () => {
   assert.equal(payload.sub, "user-1");
   assert.equal(payload.usuario, "admin");
   assert.equal(payload.perfil, "Administrador");
+  assert.equal(payload.empresaId, "emp-1");
+  assert.equal(payload.filialId, "fil-1");
 });
 
 test("refresh token é opaco e expira em 30 dias", () => {
