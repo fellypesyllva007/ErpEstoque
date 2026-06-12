@@ -30,6 +30,7 @@ services:
     environment:
       DATABASE_URL: postgresql://erpuser:erp123456@postgres:5432/erpestoque
       JWT_SECRET: ${JWT_SECRET:-mude_este_secret_em_producao}
+      CORS_ORIGINS: "${CORS_ORIGINS:-http://localhost:4000,http://localhost:5173,http://127.0.0.1:4000}"
       PORT: 4000
     ports:
       - "4000:4000"

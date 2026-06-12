@@ -1,4 +1,8 @@
 import { prisma } from "../../core/prisma/prisma.js";
+import {
+  calcularSugestaoReposicaoProduto,
+  deveExibirSugestaoReposicao,
+} from "../../core/business-rules.js";
 
 export class RelatoriosService {
   async estoqueCompleto() {
@@ -41,27 +45,13 @@ export class RelatoriosService {
       saidaPorProduto[m.produtoId] = (saidaPorProduto[m.produtoId] ?? 0) + m.quantidade;
     }
 
-    return produtos.map(p => {
-      const saidaMes = saidaPorProduto[p.id] ?? 0;
-      const consumoDiario = saidaMes / 30;
-      const coberturaDias = consumoDiario > 0 ? Math.floor(p.estoqueAtual / consumoDiario) : 999;
-      const sugestaoCompra = Math.max(0, Math.ceil((p.estoqueMinimo * 2) - p.estoqueAtual));
-
-      return {
-        id: p.id,
-        nome: p.nome,
-        codigoInterno: p.codigoInterno,
-        fornecedor: p.fornecedor?.nome,
-        estoqueAtual: p.estoqueAtual,
-        estoqueMinimo: p.estoqueMinimo,
-        saidaMes,
-        consumoDiario: Number(consumoDiario.toFixed(2)),
-        coberturaDias,
-        sugestaoCompra,
-        criticidade: coberturaDias <= 7 ? "CRITICO" : coberturaDias <= 15 ? "ALERTA" : "OK",
-      };
-    })
-    .filter(p => p.sugestaoCompra > 0 || p.criticidade !== "OK")
+    return produtos.map((produto) =>
+      calcularSugestaoReposicaoProduto(
+        produto,
+        saidaPorProduto[produto.id] ?? 0
+      )
+    )
+    .filter(deveExibirSugestaoReposicao)
     .sort((a, b) => a.coberturaDias - b.coberturaDias);
   }
 

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { UsuarioService } from "./usuario.service.js";
 import { AuthRequest } from "../../middlewares/auth.middleware.js";
+import { getRouteParam } from "../../utils/request.js";
 
 export class UsuarioController {
   private service = new UsuarioService();
@@ -10,7 +11,7 @@ export class UsuarioController {
   }
 
   async buscarPorId(req: Request, res: Response) {
-    const u = await this.service.buscarPorId(req.params.id);
+    const u = await this.service.buscarPorId(getRouteParam(req, "id"));
     if (!u) return res.status(404).json({ message: "Usuário não encontrado" });
     return res.json(u);
   }
@@ -25,7 +26,7 @@ export class UsuarioController {
   }
 
   async atualizar(req: Request, res: Response) {
-    return res.json(await this.service.atualizar(req.params.id, req.body));
+    return res.json(await this.service.atualizar(getRouteParam(req, "id"), req.body));
   }
 
   async alterarSenha(req: AuthRequest, res: Response) {

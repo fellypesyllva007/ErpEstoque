@@ -1,9 +1,8 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import crypto from "crypto";
 
 import { prisma } from "../../core/prisma/prisma.js";
 import { LoginRequest, LoginResponse } from "./auth.types.js";
+import { criarRefreshToken, gerarAccessToken } from "../../core/auth-tokens.js";
 
 export class AuthService {
   async login(
@@ -31,27 +30,22 @@ export class AuthService {
       throw new Error("Usuário ou senha inválidos");
     }
 
-    const token = jwt.sign(
+    const token = gerarAccessToken(
       {
-        sub: usuario.id,
+        id: usuario.id,
         usuario: usuario.usuario,
         perfil: usuario.perfil.nome,
       },
-      process.env.JWT_SECRET as string,
-      {
-        expiresIn: "8h",
-      }
+      process.env.JWT_SECRET as string
     );
 
-    const refreshToken = crypto.randomUUID();
+    const refreshToken = criarRefreshToken();
 
     await prisma.refreshToken.create({
       data: {
         usuarioId: usuario.id,
-        token: refreshToken,
-        expiraEm: new Date(
-          Date.now() + 30 * 24 * 60 * 60 * 1000
-        ),
+        token: refreshToken.token,
+        expiraEm: refreshToken.expiraEm,
       },
     });
 
@@ -61,7 +55,7 @@ export class AuthService {
       usuario: usuario.usuario,
       perfil: usuario.perfil.nome,
       token,
-      refreshToken,
+      refreshToken: refreshToken.token,
     };
   }
 
@@ -91,20 +85,34 @@ export class AuthService {
       throw new Error("Refresh token expirado");
     }
 
-    const accessToken = jwt.sign(
+    const accessToken = gerarAccessToken(
       {
-        sub: tokenRegistro.usuario.id,
+        id: tokenRegistro.usuario.id,
         usuario: tokenRegistro.usuario.usuario,
         perfil: tokenRegistro.usuario.perfil.nome,
       },
-      process.env.JWT_SECRET as string,
-      {
-        expiresIn: "8h",
-      }
+      process.env.JWT_SECRET as string
     );
+
+    const novoRefreshToken = criarRefreshToken();
+
+    await prisma.$transaction([
+      prisma.refreshToken.update({
+        where: { id: tokenRegistro.id },
+        data: { revogado: true },
+      }),
+      prisma.refreshToken.create({
+        data: {
+          usuarioId: tokenRegistro.usuario.id,
+          token: novoRefreshToken.token,
+          expiraEm: novoRefreshToken.expiraEm,
+        },
+      }),
+    ]);
 
     return {
       token: accessToken,
+      refreshToken: novoRefreshToken.token,
     };
   }
 

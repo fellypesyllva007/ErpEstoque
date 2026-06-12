@@ -20,13 +20,26 @@ import licenciamentoRoutes from "./modules/licenciamento/licenciamento.routes.js
 
 const app = express();
 
-app.use(cors({
-  origin: "*",
+const corsOrigins = (process.env.CORS_ORIGINS ?? "http://localhost:4000,http://localhost:5173,http://127.0.0.1:4000")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOptions: cors.CorsOptions = {
+  origin(origin, callback) {
+    if (!origin || corsOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error("Origem não permitida pelo CORS"));
+  },
   methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"],
   allowedHeaders: ["Content-Type","Authorization"],
   credentials: false,
-}));
-app.options("/*splat", cors()); // preflight
+};
+
+app.use(cors(corsOptions));
+app.options("/*splat", cors(corsOptions)); // preflight
 app.use(express.json({ limit: "10mb" }));
 
 app.get("/health", (_req, res) => res.json({ status: "ok", ts: new Date().toISOString() }));

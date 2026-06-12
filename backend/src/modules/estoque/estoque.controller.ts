@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { EstoqueService } from "./estoque.service.js";
+import { getQueryString, getRouteParam } from "../../utils/request.js";
 
 export class EstoqueController {
   private service = new EstoqueService();
@@ -15,12 +16,12 @@ export class EstoqueController {
 
   async listarMovimentacoes(req: Request, res: Response) {
     const { produtoId } = req.query;
-    const movimentacoes = await this.service.listarMovimentacoes(produtoId as string | undefined);
+    const movimentacoes = await this.service.listarMovimentacoes(getQueryString(req, "produtoId"));
     return res.json(movimentacoes);
   }
 
   async resumoPorProduto(req: Request, res: Response) {
-    const resumo = await this.service.resumoPorProduto(req.params.produtoId);
+    const resumo = await this.service.resumoPorProduto(getRouteParam(req, "produtoId"));
     return res.json(resumo);
   }
 }

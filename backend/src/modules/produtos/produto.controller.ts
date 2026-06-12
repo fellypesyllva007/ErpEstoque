@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { ProdutoService } from "./produto.service.js";
 import { AuthRequest } from "../../middlewares/auth.middleware.js";
+import { getRouteParam } from "../../utils/request.js";
 
 export class ProdutoController {
   private service = new ProdutoService();
@@ -11,7 +12,7 @@ export class ProdutoController {
   }
 
   async buscarPorId(req: AuthRequest, res: Response) {
-    const produto = await this.service.buscarPorId(req.params.id);
+    const produto = await this.service.buscarPorId(getRouteParam(req, "id"));
     if (!produto) return res.status(404).json({ message: "Produto não encontrado" });
     return res.json(produto);
   }
@@ -22,12 +23,12 @@ export class ProdutoController {
   }
 
   async atualizar(req: AuthRequest, res: Response) {
-    const produto = await this.service.atualizar(req.params.id, req.body, req.user!.sub);
+    const produto = await this.service.atualizar(getRouteParam(req, "id"), req.body, req.user!.sub);
     return res.json(produto);
   }
 
   async excluir(req: AuthRequest, res: Response) {
-    await this.service.excluir(req.params.id, req.user!.sub);
+    await this.service.excluir(getRouteParam(req, "id"), req.user!.sub);
     return res.status(204).send();
   }
 
