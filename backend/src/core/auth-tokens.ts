@@ -5,6 +5,8 @@ export interface JwtUsuarioPayload {
   id: string;
   usuario: string;
   perfil: string;
+  empresaId?: string;
+  filialId?: string;
 }
 
 export interface RefreshTokenCriado {
@@ -24,6 +26,8 @@ export function gerarAccessToken(
       sub: usuario.id,
       usuario: usuario.usuario,
       perfil: usuario.perfil,
+      empresaId: usuario.empresaId,
+      filialId: usuario.filialId,
     },
     secret,
     { expiresIn }

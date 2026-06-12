@@ -65,6 +65,8 @@ export class AuthController {
       usuario: req.user?.usuario,
       perfil: req.user?.perfil,
       id: req.user?.sub,
+      empresaId: req.user?.empresaId,
+      filialId: req.user?.filialId,
     });
   }
 }
