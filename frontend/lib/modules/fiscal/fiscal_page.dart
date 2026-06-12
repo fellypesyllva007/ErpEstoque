@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_config.dart';
 import '../../widgets/erp_scaffold.dart';
 import 'fiscal_models.dart';
+import 'fiscal_service.dart' as erp_fiscal;
 import 'nfeweb_service.dart';
 
 class FiscalPage extends StatefulWidget {
@@ -16,6 +17,7 @@ class FiscalPage extends StatefulWidget {
 
 class _FiscalPageState extends State<FiscalPage> {
   final _service = const NfeWebService();
+  final _erpFiscalService = const erp_fiscal.FiscalService();
   final _cnpjController = TextEditingController(text: '12345678000195');
   final _numeroController = TextEditingController(text: '123');
   final _serieController = TextEditingController(text: '1');
@@ -27,6 +29,7 @@ class _FiscalPageState extends State<FiscalPage> {
   FiscalApiResponse? _acbr;
   FiscalApiResponse? _db;
   List<EmitenteFiscal> _emitentes = const [];
+  List<DocumentoFiscal> _documentos = const [];
   String? _emitenteSelecionado;
   String? _chave;
   String? _statusSefaz;
@@ -72,11 +75,13 @@ class _FiscalPageState extends State<FiscalPage> {
         _service.dbStatus(),
       ]);
       final emitentes = await _service.emitentes();
+      final documentos = await _erpFiscalService.listarNfe();
       setState(() {
         _health = results[0];
         _acbr = results[1];
         _db = results[2];
         _emitentes = emitentes;
+        _documentos = documentos;
         _emitenteSelecionado = emitentes.isEmpty ? null : emitentes.first.id;
       });
     });
@@ -142,6 +147,26 @@ class _FiscalPageState extends State<FiscalPage> {
                 _StatusCard(title: 'ACBrLibNFe', response: _acbr, icon: Icons.extension),
                 _StatusCard(title: 'Base fiscal', response: _db, icon: Icons.storage),
               ],
+            ),
+
+            const SizedBox(height: 16),
+            _DocumentosFiscaisCard(
+              documentos: _documentos,
+              onValidar: (id) => _executar(() async {
+                await _erpFiscalService.validar(id);
+                _documentos = await _erpFiscalService.listarNfe();
+                setState(() {});
+              }),
+              onTransmitir: (id) => _executar(() async {
+                await _erpFiscalService.transmitir(id);
+                _documentos = await _erpFiscalService.listarNfe();
+                setState(() {});
+              }),
+              onCancelar: (id) => _executar(() async {
+                await _erpFiscalService.cancelar(id);
+                _documentos = await _erpFiscalService.listarNfe();
+                setState(() {});
+              }),
             ),
             const SizedBox(height: 16),
             _EmitentesCard(
@@ -393,6 +418,102 @@ class _JsonCard extends StatelessWidget {
                 style: const TextStyle(color: Colors.white, fontFamily: 'monospace'),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+class _DocumentosFiscaisCard extends StatelessWidget {
+  final List<DocumentoFiscal> documentos;
+  final ValueChanged<String> onValidar;
+  final ValueChanged<String> onTransmitir;
+  final ValueChanged<String> onCancelar;
+
+  const _DocumentosFiscaisCard({
+    required this.documentos,
+    required this.onValidar,
+    required this.onTransmitir,
+    required this.onCancelar,
+  });
+
+  static const _statusColors = {
+    'RASCUNHO': Colors.blueGrey,
+    'VALIDADA': Colors.indigo,
+    'ASSINADA': Colors.deepPurple,
+    'ENVIADA': Colors.orange,
+    'AUTORIZADA': Colors.green,
+    'REJEITADA': Colors.red,
+    'CANCELADA': Colors.grey,
+    'DENEGADA': Colors.brown,
+    'INUTILIZADA': Colors.black54,
+    'CONTINGENCIA': Colors.amber,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text('Documentos fiscais NF-e/NFC-e no ERP', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+                Chip(label: Text('${documentos.length} documento(s)')),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text('Lista persistida pelo backend ERP. O NfeWeb fica como gateway técnico ACBrLib/SEFAZ.'),
+            const SizedBox(height: 12),
+            if (documentos.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: Text('Nenhum documento fiscal criado. Emita a partir de uma venda concluída ou OS.')),
+              )
+            else
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  columns: const [
+                    DataColumn(label: Text('Número/Série')),
+                    DataColumn(label: Text('Cliente')),
+                    DataColumn(label: Text('Valor')),
+                    DataColumn(label: Text('Status ERP')),
+                    DataColumn(label: Text('Status SEFAZ')),
+                    DataColumn(label: Text('Ambiente')),
+                    DataColumn(label: Text('Emissão')),
+                    DataColumn(label: Text('Protocolo')),
+                    DataColumn(label: Text('Venda/OS')),
+                    DataColumn(label: Text('Ações')),
+                  ],
+                  rows: documentos.map((doc) {
+                    final color = _statusColors[doc.statusInterno] ?? Colors.blueGrey;
+                    return DataRow(cells: [
+                      DataCell(SelectableText(doc.numeroSerie)),
+                      DataCell(Text(doc.clienteNome)),
+                      DataCell(Text('R\$ ${doc.valorTotal.toStringAsFixed(2)}')),
+                      DataCell(Chip(label: Text(doc.statusInterno, style: const TextStyle(fontSize: 11)), backgroundColor: color.withOpacity(0.15))),
+                      DataCell(Text(doc.statusSefaz ?? '-')),
+                      DataCell(Text(doc.ambienteFiscal)),
+                      DataCell(Text(doc.dataEmissao?.substring(0, 10) ?? '-')),
+                      DataCell(Text(doc.protocolo ?? '-')),
+                      DataCell(Text(doc.vinculo)),
+                      DataCell(Wrap(spacing: 4, children: [
+                        IconButton(tooltip: 'Validar', icon: const Icon(Icons.fact_check), onPressed: doc.statusInterno == 'RASCUNHO' ? () => onValidar(doc.id) : null),
+                        IconButton(tooltip: 'Transmitir', icon: const Icon(Icons.cloud_upload), onPressed: ['VALIDADA', 'ASSINADA', 'REJEITADA', 'CONTINGENCIA'].contains(doc.statusInterno) ? () => onTransmitir(doc.id) : null),
+                        IconButton(tooltip: 'Cancelar', icon: const Icon(Icons.cancel), onPressed: ['AUTORIZADA', 'ENVIADA'].contains(doc.statusInterno) ? () => onCancelar(doc.id) : null),
+                        IconButton(tooltip: 'XML/DANFE em breve', icon: const Icon(Icons.file_download), onPressed: doc.chave == null ? null : () {}),
+                      ])),
+                    ]);
+                  }).toList(),
+                ),
+              ),
           ],
         ),
       ),

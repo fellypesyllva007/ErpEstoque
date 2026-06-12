@@ -17,6 +17,7 @@ import relatoriosRoutes from "./modules/relatorios/relatorios.routes.js";
 import notificacoesRoutes from "./modules/notificacoes/notificacoes.routes.js";
 import { LicenciamentoService } from "./modules/licenciamento/licenciamento.service.js";
 import licenciamentoRoutes from "./modules/licenciamento/licenciamento.routes.js";
+import fiscalRoutes from "./modules/fiscal/fiscal.routes.js";
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.use("/os", osRoutes);
 app.use("/compras", compraRoutes);
 app.use("/vendas", vendaRoutes);
 app.use("/relatorios", relatoriosRoutes);
+app.use("/fiscal", fiscalRoutes);
 app.use("/usuarios", usuarioRoutes);
 
 // Error handler global

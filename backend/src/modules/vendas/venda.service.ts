@@ -27,6 +27,7 @@ export class VendaService {
       include: {
         cliente: { select: { nome: true } },
         itens: { include: { produto: { select: { nome: true, codigoInterno: true } } } },
+        documentosFiscais: { select: { id: true, modelo: true, numero: true, serie: true, chave: true, statusInterno: true, statusSefaz: true, protocolo: true, ambienteFiscal: true } },
       },
       orderBy: { criadoEm: "desc" },
     });
@@ -38,6 +39,7 @@ export class VendaService {
       include: {
         cliente: true,
         itens: { include: { produto: { select: { nome: true, codigoInterno: true } } } },
+        documentosFiscais: { select: { id: true, modelo: true, numero: true, serie: true, chave: true, statusInterno: true, statusSefaz: true, protocolo: true, ambienteFiscal: true } },
       },
     });
   }
