@@ -104,6 +104,22 @@ model Produto {
   itensVenda        ItemVenda[]
   movimentacoes     MovimentacaoEstoque[]
   compatibilidades  ProdutoModelo[]
+  documentosFiscais DocumentoFiscalItem[]
+
+  // Cadastro fiscal do produto para emissão NF-e/NFC-e em ambiente multiempresa.
+  ncm               String?
+  cest              String?
+  cfopPadrao        String?
+  origemMercadoria  String?
+  unidadeComercial  String? @default("UN")
+  unidadeTributavel String? @default("UN")
+  gtinEan           String?
+  pesoLiquido       Decimal? @db.Decimal(12, 3)
+  pesoBruto         Decimal? @db.Decimal(12, 3)
+  cstCsosnIcms      String?
+  pis               String?
+  cofins            String?
+  ipi               String?
   categoria         CategoriaProduto      @relation(fields: [categoriaId], references: [id])
   fornecedor        Fornecedor?           @relation(fields: [fornecedorId], references: [id])
   marca             Marca                 @relation(fields: [marcaId], references: [id])
@@ -260,6 +276,7 @@ model Cliente {
   atualizadoEm DateTime       @updatedAt
   ordens       OrdemServico[]
   vendas       Venda[]
+  documentosFiscais DocumentoFiscal[]
 
   @@index([nome])
   @@map("clientes")
@@ -288,6 +305,7 @@ model OrdemServico {
   itens             ItemOS[]
   cliente           Cliente   @relation(fields: [clienteId], references: [id])
   tecnico           Usuario?  @relation(fields: [tecnicoId], references: [id])
+  documentosFiscais DocumentoFiscal[]
 
   @@index([clienteId])
   @@index([status])
@@ -366,6 +384,7 @@ model Venda {
   atualizadoEm   DateTime    @updatedAt
   itens          ItemVenda[]
   cliente        Cliente?    @relation(fields: [clienteId], references: [id])
+  documentosFiscais DocumentoFiscal[]
 
   @@index([clienteId])
   @@index([status])
@@ -459,4 +478,259 @@ model ConfiguracaoSistema {
   @@index([licencaStatus])
 
   @@map("configuracoes_sistema")
+}
+
+
+model Empresa {
+  id           String   @id @default(uuid())
+  nome         String
+  cnpj         String   @unique
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  filiais      Filial[]
+  documentosFiscais DocumentoFiscal[]
+
+  @@index([nome])
+  @@map("empresas")
+}
+
+model Filial {
+  id           String   @id @default(uuid())
+  empresaId    String
+  nome         String
+  cnpj         String   @unique
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  empresa      Empresa  @relation(fields: [empresaId], references: [id])
+  emitentes    EmitenteFiscal[]
+  documentosFiscais DocumentoFiscal[]
+
+  @@index([empresaId])
+  @@map("filiais")
+}
+
+model EmitenteFiscal {
+  id                    String   @id @default(uuid())
+  filialId              String?
+  cnpj                  String   @unique
+  razaoSocial           String
+  nomeFantasia          String?
+  inscricaoEstadual     String?
+  inscricaoMunicipal    String?
+  crt                   String?
+  cnae                  String?
+  logradouro            String?
+  numero                String?
+  complemento           String?
+  bairro                String?
+  municipio             String?
+  municipioIbge         String?
+  uf                    String
+  cep                   String?
+  certificadoReferencia String?
+  ambienteFiscal        String   @default("HOMOLOGACAO")
+  serieNfe              Int      @default(1)
+  serieNfce             Int      @default(1)
+  cscId                 String?
+  cscTokenReferencia    String?
+  ativo                 Boolean  @default(true)
+  criadoEm              DateTime @default(now())
+  atualizadoEm          DateTime @updatedAt
+  filial                Filial?  @relation(fields: [filialId], references: [id])
+  documentosFiscais     DocumentoFiscal[]
+  series                SerieFiscal[]
+
+  @@index([filialId])
+  @@index([ambienteFiscal])
+  @@index([uf])
+  @@map("emitentes_fiscais")
+}
+
+model SerieFiscal {
+  id              String   @id @default(uuid())
+  emitenteId      String
+  modelo          String
+  serie           Int
+  proximoNumero   Int      @default(1)
+  ambienteFiscal  String   @default("HOMOLOGACAO")
+  ativo           Boolean  @default(true)
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
+  emitente        EmitenteFiscal @relation(fields: [emitenteId], references: [id])
+  documentosFiscais DocumentoFiscal[]
+
+  @@unique([emitenteId, modelo, serie, ambienteFiscal])
+  @@index([emitenteId])
+  @@map("series_fiscais")
+}
+
+model NaturezaOperacao {
+  id           String   @id @default(uuid())
+  descricao    String
+  tipoOperacao String
+  cfopPadrao   String?
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  documentosFiscais DocumentoFiscal[]
+  regrasTributarias RegraTributaria[]
+
+  @@index([tipoOperacao])
+  @@map("naturezas_operacao")
+}
+
+model RegraTributaria {
+  id                 String   @id @default(uuid())
+  naturezaOperacaoId String?
+  regimeTributario   String?
+  ufOrigem           String?
+  ufDestino          String?
+  ncm                String?
+  cfop               String?
+  cstCsosnIcms       String?
+  aliquotaIcms       Decimal? @db.Decimal(7, 4)
+  pis                String?
+  aliquotaPis        Decimal? @db.Decimal(7, 4)
+  cofins             String?
+  aliquotaCofins     Decimal? @db.Decimal(7, 4)
+  ipi                String?
+  aliquotaIpi        Decimal? @db.Decimal(7, 4)
+  ativo              Boolean  @default(true)
+  criadoEm           DateTime @default(now())
+  atualizadoEm       DateTime @updatedAt
+  naturezaOperacao   NaturezaOperacao? @relation(fields: [naturezaOperacaoId], references: [id])
+
+  @@index([naturezaOperacaoId])
+  @@index([regimeTributario])
+  @@index([ufOrigem, ufDestino])
+  @@index([ncm])
+  @@map("regras_tributarias")
+}
+
+model DocumentoFiscal {
+  id                 String   @id @default(uuid())
+  empresaId          String?
+  filialId           String?
+  emitenteId         String?
+  serieFiscalId      String?
+  naturezaOperacaoId String?
+  vendaId            String?
+  ordemServicoId     String?
+  clienteId          String?
+  modelo             String   @default("55")
+  numero             Int?
+  serie              Int?
+  chave              String?  @unique
+  clienteNome        String?
+  valorTotal         Decimal  @default(0) @db.Decimal(12, 2)
+  statusInterno      String   @default("RASCUNHO")
+  statusSefaz        String?
+  ambienteFiscal     String   @default("HOMOLOGACAO")
+  dataEmissao        DateTime?
+  protocolo          String?
+  justificativa      String?
+  nfewebId           String?
+  payloadFiscal      Json?
+  retornoGateway     Json?
+  criadoEm           DateTime @default(now())
+  atualizadoEm       DateTime @updatedAt
+  empresa            Empresa? @relation(fields: [empresaId], references: [id])
+  filial             Filial? @relation(fields: [filialId], references: [id])
+  emitente           EmitenteFiscal? @relation(fields: [emitenteId], references: [id])
+  serieFiscal        SerieFiscal? @relation(fields: [serieFiscalId], references: [id])
+  naturezaOperacao   NaturezaOperacao? @relation(fields: [naturezaOperacaoId], references: [id])
+  venda              Venda? @relation(fields: [vendaId], references: [id])
+  ordemServico       OrdemServico? @relation(fields: [ordemServicoId], references: [id])
+  cliente            Cliente? @relation(fields: [clienteId], references: [id])
+  itens              DocumentoFiscalItem[]
+  eventos            DocumentoFiscalEvento[]
+  xmls               DocumentoFiscalXml[]
+  historicoStatus    DocumentoFiscalStatusHistorico[]
+
+  @@index([empresaId])
+  @@index([vendaId])
+  @@index([ordemServicoId])
+  @@index([clienteId])
+  @@index([statusInterno])
+  @@index([statusSefaz])
+  @@index([ambienteFiscal])
+  @@index([dataEmissao])
+  @@map("documentos_fiscais")
+}
+
+model DocumentoFiscalItem {
+  id                 String   @id @default(uuid())
+  documentoFiscalId  String
+  produtoId          String?
+  codigoProduto      String?
+  descricao          String
+  ncm                String?
+  cest               String?
+  cfop               String?
+  unidadeComercial   String?  @default("UN")
+  unidadeTributavel  String?  @default("UN")
+  gtinEan            String?
+  quantidade         Decimal  @db.Decimal(12, 4)
+  valorUnitario      Decimal  @db.Decimal(12, 4)
+  valorTotal         Decimal  @db.Decimal(12, 2)
+  cstCsosnIcms       String?
+  pis                String?
+  cofins             String?
+  ipi                String?
+  criadoEm           DateTime @default(now())
+  documentoFiscal    DocumentoFiscal @relation(fields: [documentoFiscalId], references: [id], onDelete: Cascade)
+  produto            Produto? @relation(fields: [produtoId], references: [id])
+
+  @@index([documentoFiscalId])
+  @@index([produtoId])
+  @@map("documentos_fiscais_itens")
+}
+
+model DocumentoFiscalEvento {
+  id                String   @id @default(uuid())
+  documentoFiscalId String
+  tipo              String
+  status            String?
+  protocolo         String?
+  justificativa     String?
+  retornoGateway    Json?
+  criadoEm          DateTime @default(now())
+  documentoFiscal   DocumentoFiscal @relation(fields: [documentoFiscalId], references: [id], onDelete: Cascade)
+
+  @@index([documentoFiscalId])
+  @@index([tipo])
+  @@index([criadoEm])
+  @@map("documentos_fiscais_eventos")
+}
+
+model DocumentoFiscalXml {
+  id                String   @id @default(uuid())
+  documentoFiscalId String
+  tipo              String
+  xml               String
+  hash              String?
+  criadoEm          DateTime @default(now())
+  documentoFiscal   DocumentoFiscal @relation(fields: [documentoFiscalId], references: [id], onDelete: Cascade)
+
+  @@index([documentoFiscalId])
+  @@index([tipo])
+  @@map("documentos_fiscais_xml")
+}
+
+model DocumentoFiscalStatusHistorico {
+  id                String   @id @default(uuid())
+  documentoFiscalId String
+  statusAnterior    String?
+  statusNovo        String
+  statusSefaz       String?
+  observacao        String?
+  criadoEm          DateTime @default(now())
+  documentoFiscal   DocumentoFiscal @relation(fields: [documentoFiscalId], references: [id], onDelete: Cascade)
+
+  @@index([documentoFiscalId])
+  @@index([statusNovo])
+  @@index([criadoEm])
+  @@map("documentos_fiscais_status_historico")
 }

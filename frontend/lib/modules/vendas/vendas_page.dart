@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/api_service.dart';
 import '../../widgets/erp_scaffold.dart';
 import 'venda_form_page.dart';
+import '../fiscal/fiscal_service.dart';
 
 class VendasPage extends StatefulWidget {
   const VendasPage({super.key});
@@ -13,6 +14,7 @@ class _VendasPageState extends State<VendasPage> {
   List<dynamic> _lista = [];
   bool _carregando = true;
   String? _filtroStatus;
+  final _fiscalService = const FiscalService();
 
   static const _statusCores = {
     'CONCLUIDA': Colors.green,
@@ -77,7 +79,7 @@ class _VendasPageState extends State<VendasPage> {
                               child: ListTile(
                                 leading: CircleAvatar(backgroundColor: cor.withOpacity(0.15), child: Icon(Icons.receipt, color: cor)),
                                 title: Text('${v['numero']} — ${v['cliente']?['nome'] ?? 'Sem cliente'}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                subtitle: Text('${(v['itens'] as List).length} itens · ${v['formaPagamento'] ?? '-'} · ${(v['criadoEm'] as String).substring(0,10)}'),
+                                subtitle: Text('${(v['itens'] as List).length} itens · ${v['formaPagamento'] ?? '-'} · ${(v['criadoEm'] as String).substring(0,10)} · Fiscal: ${_statusFiscal(v)}'),
                                 trailing: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -111,6 +113,7 @@ class _VendasPageState extends State<VendasPage> {
               Text('Cliente: ${v['cliente']?['nome'] ?? 'Consumidor'}'),
               Text('Pagamento: ${v['formaPagamento'] ?? '-'}'),
               Text('Status: ${v['status']}'),
+              Text('Fiscal: ${_statusFiscal(v)}'),
               const Divider(),
               ...itens.map((i) => ListTile(
                 dense: true,
@@ -123,6 +126,31 @@ class _VendasPageState extends State<VendasPage> {
           ),
         ),
         actions: [
+
+          if (v['status'] == 'CONCLUIDA' && !_temDocumentoFiscal(v)) TextButton.icon(
+            icon: const Icon(Icons.receipt_long),
+            onPressed: () async {
+              Navigator.pop(context);
+              await _emitirDocumentoFiscal(v['id'].toString(), '55');
+            },
+            label: const Text('Emitir NF-e'),
+          ),
+          if (v['status'] == 'CONCLUIDA' && !_temDocumentoFiscal(v)) TextButton.icon(
+            icon: const Icon(Icons.point_of_sale),
+            onPressed: () async {
+              Navigator.pop(context);
+              await _emitirDocumentoFiscal(v['id'].toString(), '65');
+            },
+            label: const Text('Emitir NFC-e'),
+          ),
+          if (_temDocumentoFiscal(v)) TextButton.icon(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              Navigator.pop(context);
+              _mostrarDocumentoFiscal(context, v);
+            },
+            label: const Text('Consultar Fiscal'),
+          ),
           if (v['status'] == 'CONCLUIDA') TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () async {
@@ -141,4 +169,56 @@ class _VendasPageState extends State<VendasPage> {
       ),
     );
   }
+
+  bool _temDocumentoFiscal(Map<String, dynamic> venda) {
+    final docs = venda['documentosFiscais'];
+    return docs is List && docs.isNotEmpty;
+  }
+
+  String _statusFiscal(Map<String, dynamic> venda) {
+    final docs = venda['documentosFiscais'];
+    if (docs is! List || docs.isEmpty) return 'sem documento';
+    final doc = docs.first as Map<String, dynamic>;
+    return '${doc['modelo'] ?? '55'} ${doc['statusInterno'] ?? 'RASCUNHO'}';
+  }
+
+  Future<void> _emitirDocumentoFiscal(String vendaId, String modelo) async {
+    try {
+      await _fiscalService.criarDaVenda(vendaId, modelo: modelo);
+      await _carregar();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${modelo == '65' ? 'NFC-e' : 'NF-e'} criada em RASCUNHO')));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
+  void _mostrarDocumentoFiscal(BuildContext context, Map<String, dynamic> venda) {
+    final docs = (venda['documentosFiscais'] as List).cast<Map<String, dynamic>>();
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Documentos fiscais da venda'),
+        content: SizedBox(
+          width: 520,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: docs.map((doc) => ListTile(
+              leading: const Icon(Icons.receipt_long),
+              title: Text('Modelo ${doc['modelo']} Nº ${doc['numero'] ?? '-'} / Série ${doc['serie'] ?? '-'}'),
+              subtitle: Text('ERP: ${doc['statusInterno']} · SEFAZ: ${doc['statusSefaz'] ?? '-'}\nChave: ${doc['chave'] ?? '-'}'),
+              isThreeLine: true,
+            )).toList(),
+          ),
+        ),
+        actions: [
+          TextButton.icon(onPressed: null, icon: const Icon(Icons.file_download), label: const Text('Baixar XML')),
+          TextButton.icon(onPressed: null, icon: const Icon(Icons.print), label: const Text('DANFE')),
+          FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar')),
+        ],
+      ),
+    );
+  }
+
 }
