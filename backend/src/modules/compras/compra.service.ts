@@ -1,6 +1,7 @@
 import { prisma } from "../../core/prisma/prisma.js";
 import { registrarAuditoria } from "../../core/auditoria.js";
 import { CreatePedidoDto, RecebimentoDto } from "./compra.types.js";
+import { calcularEstoquePosterior, calcularStatusPedidoCompra } from "../../core/business-rules.js";
 
 function gerarNumeroPedido() {
   const d = new Date();
@@ -75,7 +76,7 @@ export class CompraService {
       for (const item of data.itens) {
         const prod = await tx.produto.findUniqueOrThrow({ where: { id: item.produtoId } });
         const anterior = prod.estoqueAtual;
-        const posterior = anterior + item.quantidade;
+        const posterior = calcularEstoquePosterior(anterior, item.quantidade, "ENTRADA");
 
         await tx.produto.update({ where: { id: item.produtoId }, data: { estoqueAtual: posterior } });
         await tx.movimentacaoEstoque.create({
@@ -98,12 +99,9 @@ export class CompraService {
 
       // Determinar novo status do pedido
       const itensAtualizados = await tx.itemPedidoCompra.findMany({ where: { pedidoId: data.pedidoId } });
-      const todosConcluidos = itensAtualizados.every(i => i.qtdRecebida >= i.quantidade);
-      const algumRecebido = itensAtualizados.some(i => i.qtdRecebida > 0);
-
       await tx.pedidoCompra.update({
         where: { id: data.pedidoId },
-        data: { status: todosConcluidos ? "RECEBIDO" : algumRecebido ? "PARCIAL" : "ENVIADO" },
+        data: { status: calcularStatusPedidoCompra(itensAtualizados) },
       });
 
       return rec;

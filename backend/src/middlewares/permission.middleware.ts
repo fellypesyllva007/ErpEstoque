@@ -1,6 +1,7 @@
 import { Response, NextFunction } from "express";
 import { prisma } from "../core/prisma/prisma.js";
 import { AuthRequest } from "./auth.middleware.js";
+import { montarCodigoPermissao } from "../core/business-rules.js";
 
 export function permissionMiddleware(
   permissaoRequerida: string
@@ -51,10 +52,11 @@ export function permissionMiddleware(
       }
 
       const permissoes = usuario.perfil.permissoes.map(
-        (item) =>
-          `${item.permissao.tela.modulo.codigo}.` +
-          `${item.permissao.tela.codigo}.` +
-          `${item.permissao.codigo}`
+        (item) => montarCodigoPermissao(
+          item.permissao.tela.modulo.codigo,
+          item.permissao.tela.codigo,
+          item.permissao.codigo
+        )
       );
 
       const possuiPermissao =

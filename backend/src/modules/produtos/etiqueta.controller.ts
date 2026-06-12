@@ -1,7 +1,16 @@
 import { Request, Response } from "express";
 import { prisma } from "../../core/prisma/prisma.js";
+import { getRouteParam } from "../../utils/request.js";
 
-function gerarHtml(produtos: any[]): string {
+interface ProdutoEtiqueta {
+  nome: string;
+  codigoInterno: string;
+  precoVenda: unknown;
+  categoria?: { nome: string } | null;
+  marca?: { nome: string } | null;
+}
+
+function gerarHtml(produtos: ProdutoEtiqueta[]): string {
   const etiquetas = produtos
     .map(
       (p) => `
@@ -68,7 +77,7 @@ export class EtiquetaController {
   // GET /produtos/:id/etiqueta
   async gerarEtiquetaUnica(req: Request, res: Response) {
     const produto = await prisma.produto.findUnique({
-      where: { id: req.params.id },
+      where: { id: getRouteParam(req, "id") },
       include: { categoria: true, marca: true },
     });
     if (!produto)

@@ -1,6 +1,11 @@
 import { prisma } from "../../core/prisma/prisma.js";
 import { registrarAuditoria } from "../../core/auditoria.js";
 import { CreateVendaDto } from "./venda.types.js";
+import {
+  assertEstoqueDisponivel,
+  calcularEstoquePosterior,
+  calcularTotalVenda,
+} from "../../core/business-rules.js";
 
 function gerarNumeroVenda() {
   const d = new Date();
@@ -41,16 +46,11 @@ export class VendaService {
     // Verificar estoque antes de tudo
     for (const item of data.itens) {
       const prod = await prisma.produto.findUniqueOrThrow({ where: { id: item.produtoId } });
-      if (prod.estoqueAtual < item.quantidade) {
-        throw new Error(`Estoque insuficiente para "${prod.nome}". Disponível: ${prod.estoqueAtual}`);
-      }
+      assertEstoqueDisponivel(prod, item.quantidade);
     }
 
     const descontoGlobal = data.desconto ?? 0;
-    const valorTotal = data.itens.reduce((s, i) => {
-      const subtotal = i.quantidade * i.precoUnitario - (i.desconto ?? 0);
-      return s + subtotal;
-    }, 0) - descontoGlobal;
+    const valorTotal = calcularTotalVenda(data.itens, descontoGlobal);
 
     const venda = await prisma.$transaction(async (tx) => {
       const v = await tx.venda.create({
@@ -78,7 +78,7 @@ export class VendaService {
       for (const item of data.itens) {
         const prod = await tx.produto.findUniqueOrThrow({ where: { id: item.produtoId } });
         const anterior = prod.estoqueAtual;
-        const posterior = anterior - item.quantidade;
+        const posterior = calcularEstoquePosterior(anterior, item.quantidade, "SAIDA");
 
         await tx.produto.update({ where: { id: item.produtoId }, data: { estoqueAtual: posterior } });
         await tx.movimentacaoEstoque.create({
@@ -111,7 +111,7 @@ export class VendaService {
       for (const item of venda.itens) {
         const prod = await tx.produto.findUniqueOrThrow({ where: { id: item.produtoId } });
         const anterior = prod.estoqueAtual;
-        const posterior = anterior + item.quantidade;
+        const posterior = calcularEstoquePosterior(anterior, item.quantidade, "ENTRADA");
         await tx.produto.update({ where: { id: item.produtoId }, data: { estoqueAtual: posterior } });
         await tx.movimentacaoEstoque.create({
           data: {
@@ -139,7 +139,11 @@ export class VendaService {
       include: { produto: { select: { nome: true, codigoInterno: true, categoria: { select: { nome: true } } } } },
     });
 
-    const mapa: Record<string, { produto: any; qtd: number; faturamento: number }> = {};
+    const mapa: Record<string, {
+      produto: { nome: string; codigoInterno: string; categoria: { nome: string } | null };
+      qtd: number;
+      faturamento: number;
+    }> = {};
     for (const i of itens) {
       if (!mapa[i.produtoId]) mapa[i.produtoId] = { produto: i.produto, qtd: 0, faturamento: 0 };
       mapa[i.produtoId].qtd += i.quantidade;

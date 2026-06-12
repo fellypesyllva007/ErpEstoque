@@ -1,6 +1,10 @@
 import { prisma } from "../../core/prisma/prisma.js";
 import { registrarAuditoria } from "../../core/auditoria.js";
 import { CreateOSDto, UpdateOSDto, AdicionarPecaDto } from "./os.types.js";
+import {
+  assertEstoqueDisponivel,
+  calcularEstoquePosterior,
+} from "../../core/business-rules.js";
 
 function gerarNumeroOS(): string {
   const d = new Date();
@@ -57,9 +61,7 @@ export class OSService {
   async adicionarPeca(ordemId: string, data: AdicionarPecaDto, usuarioId: string) {
     // Verificar estoque
     const produto = await prisma.produto.findUniqueOrThrow({ where: { id: data.produtoId } });
-    if (produto.estoqueAtual < data.quantidade) {
-      throw new Error(`Estoque insuficiente para "${produto.nome}". Disponível: ${produto.estoqueAtual}`);
-    }
+    assertEstoqueDisponivel(produto, data.quantidade);
 
     const item = await prisma.$transaction(async (tx) => {
       const it = await tx.itemOS.create({
@@ -67,7 +69,7 @@ export class OSService {
       });
       // Baixa de estoque
       const ant = produto.estoqueAtual;
-      const pos = ant - data.quantidade;
+      const pos = calcularEstoquePosterior(ant, data.quantidade, "SAIDA");
       await tx.produto.update({ where: { id: data.produtoId }, data: { estoqueAtual: pos } });
       await tx.movimentacaoEstoque.create({
         data: { produtoId: data.produtoId, tipo: "SAIDA", quantidade: data.quantidade, estoqueAnterior: ant, estoquePosterior: pos, observacao: `Peça utilizada em OS ${ordemId}` },
@@ -85,7 +87,7 @@ export class OSService {
       await tx.itemOS.delete({ where: { id: itemId } });
       // Estorno
       const prod = await tx.produto.findUniqueOrThrow({ where: { id: item.produtoId } });
-      const pos = prod.estoqueAtual + item.quantidade;
+      const pos = calcularEstoquePosterior(prod.estoqueAtual, item.quantidade, "ENTRADA");
       await tx.produto.update({ where: { id: item.produtoId }, data: { estoqueAtual: pos } });
       await tx.movimentacaoEstoque.create({
         data: { produtoId: item.produtoId, tipo: "ENTRADA", quantidade: item.quantidade, estoqueAnterior: prod.estoqueAtual, estoquePosterior: pos, observacao: `Estorno peça removida OS ${item.ordemId}` },

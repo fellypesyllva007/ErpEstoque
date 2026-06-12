@@ -77,6 +77,23 @@ flutter build windows
 
 **Login padrão:** `admin` / `admin123`
 
+
+## Fiscal NF-e / ACBrLib
+
+O Flutter agora possui um módulo inicial **Fiscal NF-e** para conectar o ERP ao gateway NfeWeb/ACBrLib. Configure a URL fiscal com:
+
+```bash
+flutter run --dart-define=API_URL=http://servidor-erp:4000 --dart-define=NFEWEB_API_URL=http://oracle-arm:3333
+```
+
+No Flutter Web, também é possível apontar o gateway fiscal em tempo de execução:
+
+```js
+localStorage.setItem('ERP_NFEWEB_API_URL', 'http://oracle-arm:3333')
+```
+
+A arquitetura recomendada é manter a ACBrLibNFe (`.so`) no servidor Oracle/NfeWeb e acessar por HTTP, porque Flutter Web não carrega `.so` via FFI e Desktop/Android exigiriam binários específicos por plataforma.
+
 ## Rede local
 
 Veja `REDE_LOCAL.md` para configurar múltiplos terminais.
@@ -93,6 +110,17 @@ Veja `REDE_LOCAL.md` para configurar múltiplos terminais.
 # Cron automático (todo dia às 2h)
 0 2 * * * /caminho/ErpEstoque/backend/scripts/backup.sh
 ```
+
+
+## Produção e segurança
+
+Antes de publicar ou expor o backend fora do ambiente local/rede confiável:
+
+- Defina `JWT_SECRET` forte e único.
+- Defina `CORS_ORIGINS` com as origens HTTP realmente usadas pelo frontend Web, separadas por vírgula.
+- Altere a senha do usuário `admin` no primeiro acesso.
+- Execute `npx prisma migrate deploy` antes de iniciar o backend.
+- Use HTTPS/proxy reverso se houver acesso fora da rede local.
 
 ## Perfis de acesso
 

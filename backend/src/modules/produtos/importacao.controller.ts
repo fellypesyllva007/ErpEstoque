@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { ImportacaoService } from "./importacao.service.js";
+import { ImportacaoService, LinhaImportacao } from "./importacao.service.js";
 import { AuthRequest } from "../../middlewares/auth.middleware.js";
 
 export class ImportacaoController {
@@ -7,7 +7,7 @@ export class ImportacaoController {
 
   async importar(req: AuthRequest, res: Response) {
     try {
-      const { linhas } = req.body as { linhas: any[] };
+      const { linhas } = req.body as { linhas: LinhaImportacao[] };
       if (!Array.isArray(linhas) || linhas.length === 0) {
         return res.status(400).json({ message: "Nenhuma linha enviada" });
       }

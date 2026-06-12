@@ -23,6 +23,16 @@ class AppConfig {
     return 'http://localhost:4000';
   }
 
+  static String get nfeWebApiUrl {
+    const buildUrl = String.fromEnvironment('NFEWEB_API_URL', defaultValue: '');
+    if (buildUrl.isNotEmpty) return buildUrl;
+
+    final stored = html.window.localStorage['ERP_NFEWEB_API_URL'] ?? '';
+    if (stored.isNotEmpty) return stored;
+
+    return 'http://127.0.0.1:3333';
+  }
+
   static const String versao = '2.0.0';
   static const String nomeApp = 'ERP Assistência Técnica';
 }

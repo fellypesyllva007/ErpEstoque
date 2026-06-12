@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 
 import { CategoriaService } from "./categoria.service.js";
+import { getRouteParam } from "../../utils/request.js";
 
 export class CategoriaController {
   private service = new CategoriaService();
@@ -13,7 +14,7 @@ export class CategoriaController {
 
   async buscarPorId(req: Request, res: Response) {
     const categoria = await this.service.buscarPorId(
-      req.params.id as string
+      getRouteParam(req, "id")
     );
 
     if (!categoria) {
@@ -33,7 +34,7 @@ export class CategoriaController {
 
   async atualizar(req: Request, res: Response) {
     const categoria = await this.service.atualizar(
-      req.params.id as string,
+      getRouteParam(req, "id"),
       req.body
     );
 
