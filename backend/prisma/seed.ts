@@ -4,10 +4,22 @@ import { prisma } from "../src/core/prisma/prisma.js";
 async function main() {
   console.log("🌱 Iniciando seed v2...");
 
+  const empresa = await prisma.empresa.upsert({
+    where: { cnpj: "00000000000191" },
+    update: { nome: "KoreERP Demonstração" },
+    create: { nome: "KoreERP Demonstração", cnpj: "00000000000191" },
+  });
+  const filial = await prisma.filial.upsert({
+    where: { cnpj: "00000000000272" },
+    update: { nome: "Matriz", empresaId: empresa.id },
+    create: { nome: "Matriz", cnpj: "00000000000272", empresaId: empresa.id },
+  });
+  console.log("✅ Empresa e filial demo criadas");
+
   // Perfis
   const perfisNomes = ["Administrador", "Gerente", "Atendente", "Técnico", "Estoquista"];
   for (const nome of perfisNomes) {
-    await prisma.perfil.upsert({ where: { nome }, update: {}, create: { nome } });
+    await prisma.perfil.upsert({ where: { nome }, update: { empresaId: empresa.id, filialId: filial.id }, create: { nome, empresaId: empresa.id, filialId: filial.id } });
   }
   console.log("✅ Perfis criados");
 
@@ -45,6 +57,10 @@ async function main() {
       ]},
     { codigo: "usuarios", nome: "Usuários",
       telas: [{ codigo: "lista", nome: "Lista", perms: ["visualizar","criar","editar"] }] },
+    { codigo: "cadastros", nome: "Cadastros",
+      telas: [{ codigo: "base", nome: "Cadastros base", perms: ["visualizar","criar","editar","excluir"] }] },
+    { codigo: "financeiro", nome: "Financeiro",
+      telas: [{ codigo: "painel", nome: "Painel Financeiro", perms: ["visualizar","criar","baixar","estornar"] }] },
   ];
 
   for (const mod of modulos) {
@@ -137,11 +153,24 @@ async function main() {
 
   // Usuário admin padrão
   const senhaHash = await bcrypt.hash("admin123", 12);
-  await prisma.usuario.upsert({
+  const admin = await prisma.usuario.upsert({
     where: { usuario: "admin" },
-    update: {},
-    create: { nome: "Administrador", email: "admin@erp.com", usuario: "admin", senhaHash, perfilId: perfilAdmin.id },
+    update: { empresaId: empresa.id, filialId: filial.id },
+    create: { nome: "Administrador", email: "admin@erp.com", usuario: "admin", senhaHash, perfilId: perfilAdmin.id, empresaId: empresa.id, filialId: filial.id, senhaTemporaria: true },
   });
+  await prisma.usuarioFilial.upsert({
+    where: { usuarioId_empresaId_filialId: { usuarioId: admin.id, empresaId: empresa.id, filialId: filial.id } },
+    update: { ativo: true },
+    create: { usuarioId: admin.id, empresaId: empresa.id, filialId: filial.id },
+  });
+
+  for (const item of [
+    prisma.unidadeMedida.upsert({ where: { empresaId_sigla: { empresaId: empresa.id, sigla: "UN" } }, update: {}, create: { empresaId: empresa.id, filialId: filial.id, sigla: "UN", descricao: "Unidade" } }),
+    prisma.formaPagamento.upsert({ where: { empresaId_nome: { empresaId: empresa.id, nome: "Dinheiro" } }, update: {}, create: { empresaId: empresa.id, filialId: filial.id, nome: "Dinheiro", tipo: "DINHEIRO" } }),
+    prisma.condicaoPagamento.upsert({ where: { empresaId_nome: { empresaId: empresa.id, nome: "À vista" } }, update: {}, create: { empresaId: empresa.id, filialId: filial.id, nome: "À vista", parcelas: 1, intervaloDias: 0 } }),
+    prisma.centroCusto.upsert({ where: { empresaId_codigo: { empresaId: empresa.id, codigo: "ADM" } }, update: {}, create: { empresaId: empresa.id, filialId: filial.id, codigo: "ADM", nome: "Administrativo" } }),
+    prisma.contaContabil.upsert({ where: { empresaId_codigo: { empresaId: empresa.id, codigo: "1.1.01" } }, update: {}, create: { empresaId: empresa.id, filialId: filial.id, codigo: "1.1.01", nome: "Caixa", tipo: "ATIVO" } }),
+  ]) await item;
   console.log("✅ Usuário admin criado  →  usuario: admin  |  senha: admin123");
   console.log("🎉 Seed concluído!");
 }

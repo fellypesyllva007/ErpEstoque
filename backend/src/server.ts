@@ -18,6 +18,8 @@ import notificacoesRoutes from "./modules/notificacoes/notificacoes.routes.js";
 import { LicenciamentoService } from "./modules/licenciamento/licenciamento.service.js";
 import licenciamentoRoutes from "./modules/licenciamento/licenciamento.routes.js";
 import fiscalRoutes from "./modules/fiscal/fiscal.routes.js";
+import financeiroRoutes from "./modules/financeiro/financeiro.routes.js";
+import cadastrosRoutes from "./modules/cadastros/cadastros.routes.js";
 
 const app = express();
 
@@ -44,7 +46,7 @@ app.options("/*splat", cors(corsOptions)); // preflight
 app.use(express.json({ limit: "10mb" }));
 
 app.get("/health", (_req, res) => res.json({ status: "ok", ts: new Date().toISOString() }));
-app.get("/", (_req, res) => res.json({ sistema: "ERP Estoque v2", status: "online" }));
+app.get("/", (_req, res) => res.json({ sistema: "KoreERP", status: "online" }));
 
 app.use("/auth", authRoutes);
 app.use("/dashboard", dashboardRoutes);
@@ -61,6 +63,8 @@ app.use("/compras", compraRoutes);
 app.use("/vendas", vendaRoutes);
 app.use("/relatorios", relatoriosRoutes);
 app.use("/fiscal", fiscalRoutes);
+app.use("/financeiro", financeiroRoutes);
+app.use("/cadastros", cadastrosRoutes);
 app.use("/usuarios", usuarioRoutes);
 
 // Error handler global
@@ -75,7 +79,7 @@ async function bootstrap() {
   await new LicenciamentoService().inicializar();
 
   app.listen(PORT, () =>
-    console.log(`ERP Backend v2 rodando na porta ${PORT}`)
+    console.log(`KoreERP Backend rodando na porta ${PORT}`)
   );
 }
 

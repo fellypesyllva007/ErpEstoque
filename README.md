@@ -1,14 +1,14 @@
-# ERP Assistência Técnica e Estoque v2
+## KoreERP
 
-Sistema ERP completo para assistências técnicas de celulares.
+KoreERP é um ERP multiempresa em Flutter + Node/Express/Prisma/PostgreSQL para estoque, vendas, compras, OS, fiscal, financeiro e cadastros administrativos.
 
 ## Módulos
 
 | Módulo | Status | Funcionalidades |
 |---|---|---|
-| Dashboard | ✅ | Indicadores, alertas estoque, movimentações recentes, faturamento do dia |
+| Dashboard | ✅ | Cockpit executivo, indicadores, alertas estoque, movimentações recentes, faturamento do dia com contexto empresa/filial |
 | Produtos | ✅ | CRUD, filtro por categoria, importar CSV, exportar CSV, etiquetas, busca por código de barras |
-| Estoque | ✅ | Entrada, saída, ajuste, histórico completo |
+| Estoque | ✅ | Entrada, saída, ajuste, histórico completo e contexto por filial |
 | Compras | ✅ | Pedido de compra, recebimento parcial/total, histórico, cancelamento |
 | Vendas | ✅ | PDV com scanner, venda rápida, baixa automática de estoque, cancelamento com estorno |
 | Ordens de Serviço | ✅ | Abertura, atualização de status, peças utilizadas com baixa de estoque, laudo, mão de obra, garantia |
@@ -16,7 +16,9 @@ Sistema ERP completo para assistências técnicas de celulares.
 | Fornecedores | ✅ | CRUD completo |
 | Relatórios | ✅ | Estoque, movimentações, vendas, compras, sugestão de reposição, exportação CSV |
 | Notificações | ✅ | Widget flutuante em tempo real, alertas de estoque crítico e baixo |
-| Usuários | ✅ | CRUD, perfis, RBAC completo |
+| Usuários | ✅ | CRUD, perfis, RBAC completo e vínculo empresa/filial |
+| Cadastros base | ✅ | Empresas, filiais, unidades, formas/condições de pagamento, centros de custo e plano de contas |
+| Financeiro | ✅ | Contas a receber/pagar, caixa, fluxo de caixa, DRE e baixas parciais/totais |
 | Etiquetas | ✅ | Impressão HTML 80×40mm com código de barras |
 | Importação Excel | ✅ | CSV com template, criação automática de categorias/marcas |
 | Exportação Excel | ✅ | CSV de estoque, movimentações, vendas, sugestão de reposição |
@@ -77,6 +79,8 @@ flutter build windows
 
 **Login padrão:** `admin` / `admin123`
 
+O seed cria a empresa `KoreERP Demonstração`, a filial `Matriz` e o vínculo do administrador a esse contexto.
+
 
 ## Fiscal NF-e / ACBrLib
 
@@ -131,3 +135,8 @@ Antes de publicar ou expor o backend fora do ambiente local/rede confiável:
 | Atendente | Vendas, OS, Clientes |
 | Estoquista | Estoque, Produtos, Compras, Fornecedores |
 | Técnico | OS |
+
+
+## Multiempresa KoreERP
+
+As rotas operacionais exigem JWT com `empresaId`/`filialId` ou cabeçalhos `X-Empresa-Id` e `X-Filial-Id`. O middleware `requireTenant` valida o vínculo em `usuarios_filiais`; serviços críticos usam filtros por tenant para impedir leitura cruzada entre empresas/filiais. Consulte `docs/koreerp.md` para detalhes.

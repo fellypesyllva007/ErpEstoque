@@ -1,42 +1,39 @@
 import bcrypt from "bcrypt";
 import { prisma } from "../../core/prisma/prisma.js";
+import { TenantContext, tenantCreate, tenantWhere } from "../../core/tenant.js";
 import { CreateUsuarioDto, UpdateUsuarioDto, AlterarSenhaDto } from "./usuario.types.js";
 
 export class UsuarioService {
-  async listar() {
+  async listar(ctx: TenantContext) {
     return prisma.usuario.findMany({
-      select: { id: true, nome: true, email: true, usuario: true, ativo: true, perfil: true, ultimoLogin: true, criadoEm: true },
+      where: tenantWhere(ctx),
+      select: { id: true, nome: true, email: true, usuario: true, ativo: true, perfil: true, ultimoLogin: true, criadoEm: true, empresaId: true, filialId: true },
       orderBy: { nome: "asc" },
     });
   }
 
-  async buscarPorId(id: string) {
-    return prisma.usuario.findUnique({
-      where: { id },
-      select: { id: true, nome: true, email: true, usuario: true, ativo: true, perfil: true, ultimoLogin: true, criadoEm: true },
+  async buscarPorId(ctx: TenantContext, id: string) {
+    return prisma.usuario.findFirst({
+      where: { id, ...tenantWhere(ctx) },
+      select: { id: true, nome: true, email: true, usuario: true, ativo: true, perfil: true, ultimoLogin: true, criadoEm: true, empresaId: true, filialId: true },
     });
   }
 
-  async criar(data: CreateUsuarioDto) {
+  async criar(ctx: TenantContext, data: CreateUsuarioDto) {
+    await prisma.perfil.findFirstOrThrow({ where: { id: data.perfilId, empresaId: ctx.empresaId } });
     const senhaHash = await bcrypt.hash(data.senha, 12);
-    return prisma.usuario.create({
-      data: {
-        nome: data.nome,
-        email: data.email,
-        usuario: data.usuario,
-        senhaHash,
-        perfilId: data.perfilId,
-      },
+    const usuario = await prisma.usuario.create({
+      data: { nome: data.nome, email: data.email, usuario: data.usuario, senhaHash, perfilId: data.perfilId, senhaTemporaria: true, ...tenantCreate(ctx) },
       select: { id: true, nome: true, email: true, usuario: true, ativo: true, perfil: true },
     });
+    await prisma.usuarioFilial.create({ data: { usuarioId: usuario.id, ...tenantCreate(ctx) } });
+    return usuario;
   }
 
-  async atualizar(id: string, data: UpdateUsuarioDto) {
-    return prisma.usuario.update({
-      where: { id },
-      data,
-      select: { id: true, nome: true, email: true, usuario: true, ativo: true, perfil: true },
-    });
+  async atualizar(ctx: TenantContext, id: string, data: UpdateUsuarioDto) {
+    const atual = await this.buscarPorId(ctx, id);
+    if (!atual) throw new Error("Usuário não encontrado");
+    return prisma.usuario.update({ where: { id }, data, select: { id: true, nome: true, email: true, usuario: true, ativo: true, perfil: true } });
   }
 
   async alterarSenha(id: string, data: AlterarSenhaDto) {
@@ -44,10 +41,10 @@ export class UsuarioService {
     const senhaValida = await bcrypt.compare(data.senhaAtual, usuario.senhaHash);
     if (!senhaValida) throw new Error("Senha atual incorreta");
     const senhaHash = await bcrypt.hash(data.novaSenha, 12);
-    return prisma.usuario.update({ where: { id }, data: { senhaHash } });
+    return prisma.usuario.update({ where: { id }, data: { senhaHash, senhaTemporaria: false } });
   }
 
-  async listarPerfis() {
-    return prisma.perfil.findMany({ orderBy: { nome: "asc" } });
+  async listarPerfis(ctx: TenantContext) {
+    return prisma.perfil.findMany({ where: { empresaId: ctx.empresaId }, orderBy: { nome: "asc" } });
   }
 }

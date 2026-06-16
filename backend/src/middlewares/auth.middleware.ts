@@ -6,6 +6,8 @@ export interface AuthRequest extends Request {
     sub: string;
     usuario: string;
     perfil: string;
+    empresaId?: string;
+    filialId?: string;
   };
 }
 
@@ -32,6 +34,8 @@ export function authMiddleware(
       sub: string;
       usuario: string;
       perfil: string;
+      empresaId?: string;
+      filialId?: string;
     };
 
     req.user = payload;

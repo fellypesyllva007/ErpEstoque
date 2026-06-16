@@ -25,6 +25,8 @@ class LoginService {
     await prefs.setString('refreshToken', data['refreshToken']);
     await prefs.setString('nomeUsuario', data['nome']);
     await prefs.setString('perfil', data['perfil']);
+    await prefs.setString('empresaId', data['empresaId']);
+    await prefs.setString('filialId', data['filialId']);
     return data;
   }
 }

@@ -19,4 +19,8 @@ class DashboardService {
       return await ApiService.get('/vendas/indicadores-hoje') as Map<String, dynamic>;
     } catch (_) { return {'vendasHoje': 0, 'faturamentoHoje': 0.0}; }
   }
+
+  Future<Map<String, dynamic>> dashboardExecutivo() async {
+    return await ApiService.get('/dashboard/executivo') as Map<String, dynamic>;
+  }
 }

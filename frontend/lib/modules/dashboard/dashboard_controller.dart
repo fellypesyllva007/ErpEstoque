@@ -7,4 +7,5 @@ class DashboardController {
   Future<List<dynamic>> movimentacoesRecentes() => _service.movimentacoesRecentes();
   Future<List<dynamic>> alertasEstoque() => _service.alertasEstoque();
   Future<Map<String, dynamic>> indicadoresVendas() => _service.indicadoresVendas();
+  Future<Map<String, dynamic>> dashboardExecutivo() => _service.dashboardExecutivo();
 }
