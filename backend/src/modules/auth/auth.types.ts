@@ -5,13 +5,6 @@ export interface LoginRequest {
   filialId?: string;
 }
 
-export interface ContextoEmpresaFilial {
-  empresaId: string;
-  filialId: string;
-  empresaNome?: string;
-  filialNome?: string;
-}
-
 export interface LoginResponse {
   id: string;
   nome: string;
@@ -20,8 +13,6 @@ export interface LoginResponse {
   empresaId: string;
   filialId: string;
   primeiroAcesso: boolean;
-  permissoes: string[];
-  acessos: ContextoEmpresaFilial[];
 
   token: string;
   refreshToken: string;

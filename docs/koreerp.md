@@ -31,6 +31,7 @@ A regra operacional é:
 - Integração financeira inicial: vendas geram contas a receber; compras geram contas a pagar; baixas geram caixa.
 - Isolamento multiempresa nos módulos operacionais existentes.
 - Novas telas Flutter para Cadastros e Financeiro.
+- Cockpit executivo estilo SAP no dashboard, consolidando receita, margem gerencial, contas a receber/pagar, saldo projetado, OS por status e estoque crítico por empresa/filial.
 
 ## Instalação rápida
 

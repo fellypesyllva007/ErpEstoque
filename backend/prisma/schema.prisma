@@ -24,8 +24,8 @@ model Perfil {
 }
 
 model Usuario {
-  empresaId         String?
-  filialId          String?
+  empresaId    String?
+  filialId     String?
   id                String             @id @default(uuid())
   nome              String
   email             String             @unique
@@ -104,8 +104,8 @@ model Fornecedor {
 }
 
 model Produto {
-  empresaId         String?
-  filialId          String?
+  empresaId    String?
+  filialId     String?
   id                String                @id @default(uuid())
   codigoInterno     String                @unique
   codigoFornecedor  String?
@@ -185,8 +185,8 @@ model ProdutoModelo {
 }
 
 model MovimentacaoEstoque {
-  empresaId        String?
-  filialId         String?
+  empresaId    String?
+  filialId     String?
   id               String   @id @default(uuid())
   produtoId        String
   tipo             String
@@ -206,8 +206,8 @@ model MovimentacaoEstoque {
 }
 
 model AuditoriaProduto {
-  empresaId   String?
-  filialId    String?
+  empresaId    String?
+  filialId     String?
   id          String   @id @default(uuid())
   produtoId   String
   usuarioId   String
@@ -299,19 +299,19 @@ model PerfilPermissao {
 }
 
 model Cliente {
-  empresaId         String?
-  filialId          String?
-  id                String            @id @default(uuid())
-  nome              String
-  cpf               String?           @unique
-  telefone          String?
-  email             String?
-  endereco          String?
-  ativo             Boolean           @default(true)
-  criadoEm          DateTime          @default(now())
-  atualizadoEm      DateTime          @updatedAt
-  ordens            OrdemServico[]
-  vendas            Venda[]
+  empresaId    String?
+  filialId     String?
+  id           String         @id @default(uuid())
+  nome         String
+  cpf          String?        @unique
+  telefone     String?
+  email        String?
+  endereco     String?
+  ativo        Boolean        @default(true)
+  criadoEm     DateTime       @default(now())
+  atualizadoEm DateTime       @updatedAt
+  ordens       OrdemServico[]
+  vendas       Venda[]
   documentosFiscais DocumentoFiscal[]
 
   @@index([nome])
@@ -321,10 +321,10 @@ model Cliente {
 }
 
 model OrdemServico {
-  empresaId         String?
-  filialId          String?
-  id                String            @id @default(uuid())
-  numero            String            @unique
+  empresaId    String?
+  filialId     String?
+  id                String    @id @default(uuid())
+  numero            String    @unique
   clienteId         String
   aparelho          String
   modelo            String
@@ -393,8 +393,8 @@ model ItemPedidoCompra {
 }
 
 model RecebimentoCompra {
-  empresaId   String?
-  filialId    String?
+  empresaId    String?
+  filialId     String?
   id          String            @id @default(uuid())
   pedidoId    String
   observacoes String?
@@ -422,20 +422,20 @@ model ItemRecebimento {
 }
 
 model Venda {
-  empresaId         String?
-  filialId          String?
-  id                String            @id @default(uuid())
-  numero            String            @unique
-  clienteId         String?
-  status            String            @default("ABERTA")
-  formaPagamento    String?
-  desconto          Decimal           @default(0) @db.Decimal(12, 2)
-  valorTotal        Decimal           @default(0) @db.Decimal(12, 2)
-  observacoes       String?
-  criadoEm          DateTime          @default(now())
-  atualizadoEm      DateTime          @updatedAt
-  itens             ItemVenda[]
-  cliente           Cliente?          @relation(fields: [clienteId], references: [id])
+  empresaId    String?
+  filialId     String?
+  id             String      @id @default(uuid())
+  numero         String      @unique
+  clienteId      String?
+  status         String      @default("ABERTA")
+  formaPagamento String?
+  desconto       Decimal     @default(0) @db.Decimal(12, 2)
+  valorTotal     Decimal     @default(0) @db.Decimal(12, 2)
+  observacoes    String?
+  criadoEm       DateTime    @default(now())
+  atualizadoEm   DateTime    @updatedAt
+  itens          ItemVenda[]
+  cliente        Cliente?    @relation(fields: [clienteId], references: [id])
   documentosFiscais DocumentoFiscal[]
 
   @@index([clienteId])
@@ -478,8 +478,8 @@ model ItemOS {
 }
 
 model AuditoriaGeral {
-  empresaId   String?
-  filialId    String?
+  empresaId    String?
+  filialId     String?
   id          String   @id @default(uuid())
   usuarioId   String?
   tabela      String
@@ -625,15 +625,15 @@ model SerieFiscal {
 }
 
 model NaturezaOperacao {
-  empresaId         String?
-  filialId          String?
-  id                String            @id @default(uuid())
-  descricao         String
-  tipoOperacao      String
-  cfopPadrao        String?
-  ativo             Boolean           @default(true)
-  criadoEm          DateTime          @default(now())
-  atualizadoEm      DateTime          @updatedAt
+  empresaId    String?
+  filialId     String?
+  id           String   @id @default(uuid())
+  descricao    String
+  tipoOperacao String
+  cfopPadrao   String?
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
   documentosFiscais DocumentoFiscal[]
   regrasTributarias RegraTributaria[]
 
@@ -644,9 +644,9 @@ model NaturezaOperacao {
 }
 
 model RegraTributaria {
-  empresaId          String?
-  filialId           String?
-  id                 String            @id @default(uuid())
+  empresaId    String?
+  filialId     String?
+  id                 String   @id @default(uuid())
   naturezaOperacaoId String?
   regimeTributario   String?
   ufOrigem           String?
@@ -801,16 +801,14 @@ model DocumentoFiscalStatusHistorico {
   @@map("documentos_fiscais_status_historico")
 }
 
+
 model UsuarioFilial {
-  id        String   @id @default(uuid())
-  usuarioId String
-  empresaId String
-  filialId  String
-  ativo     Boolean  @default(true)
-  criadoEm  DateTime @default(now())
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  empresa   Empresa  @relation(fields: [empresaId], references: [id])
-  filial    Filial   @relation(fields: [filialId], references: [id])
+  id           String   @id @default(uuid())
+  usuarioId    String
+  empresaId    String
+  filialId     String
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
 
   @@unique([usuarioId, empresaId, filialId])
   @@index([usuarioId])
@@ -836,15 +834,15 @@ model UnidadeMedida {
 }
 
 model CondicaoPagamento {
-  empresaId     String?
-  filialId      String?
-  id            String   @id @default(uuid())
-  nome          String
-  parcelas      Int      @default(1)
-  intervaloDias Int      @default(30)
-  ativo         Boolean  @default(true)
-  criadoEm      DateTime @default(now())
-  atualizadoEm  DateTime @updatedAt
+  empresaId    String?
+  filialId     String?
+  id           String   @id @default(uuid())
+  nome         String
+  parcelas     Int      @default(1)
+  intervaloDias Int     @default(30)
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
   @@unique([empresaId, nome])
   @@index([empresaId])
@@ -902,19 +900,19 @@ model ContaContabil {
 }
 
 model ContaReceber {
-  empresaId     String?
-  filialId      String?
-  id            String   @id @default(uuid())
-  clienteId     String?
-  vendaId       String?
-  descricao     String
-  valor         Decimal  @db.Decimal(12, 2)
-  valorBaixado  Decimal  @default(0) @db.Decimal(12, 2)
-  vencimento    DateTime
-  status        String   @default("ABERTO")
+  empresaId    String?
+  filialId     String?
+  id           String   @id @default(uuid())
+  clienteId    String?
+  vendaId      String?
+  descricao    String
+  valor        Decimal  @db.Decimal(12, 2)
+  valorBaixado Decimal  @default(0) @db.Decimal(12, 2)
+  vencimento   DateTime
+  status       String   @default("ABERTO")
   centroCustoId String?
-  criadoEm      DateTime @default(now())
-  atualizadoEm  DateTime @updatedAt
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
   @@index([empresaId])
   @@index([filialId])
@@ -926,19 +924,19 @@ model ContaReceber {
 }
 
 model ContaPagar {
-  empresaId     String?
-  filialId      String?
-  id            String   @id @default(uuid())
-  fornecedorId  String?
-  compraId      String?
-  descricao     String
-  valor         Decimal  @db.Decimal(12, 2)
-  valorBaixado  Decimal  @default(0) @db.Decimal(12, 2)
-  vencimento    DateTime
-  status        String   @default("ABERTO")
+  empresaId    String?
+  filialId     String?
+  id           String   @id @default(uuid())
+  fornecedorId String?
+  compraId     String?
+  descricao    String
+  valor        Decimal  @db.Decimal(12, 2)
+  valorBaixado Decimal  @default(0) @db.Decimal(12, 2)
+  vencimento   DateTime
+  status       String   @default("ABERTO")
   centroCustoId String?
-  criadoEm      DateTime @default(now())
-  atualizadoEm  DateTime @updatedAt
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
   @@index([empresaId])
   @@index([filialId])
@@ -950,17 +948,17 @@ model ContaPagar {
 }
 
 model MovimentoCaixa {
-  empresaId     String?
-  filialId      String?
-  id            String   @id @default(uuid())
-  tipo          String
-  origem        String
-  referenciaId  String?
-  descricao     String
-  valor         Decimal  @db.Decimal(12, 2)
+  empresaId    String?
+  filialId     String?
+  id           String   @id @default(uuid())
+  tipo         String
+  origem       String
+  referenciaId String?
+  descricao    String
+  valor        Decimal  @db.Decimal(12, 2)
   dataMovimento DateTime @default(now())
-  estornado     Boolean  @default(false)
-  criadoEm      DateTime @default(now())
+  estornado    Boolean  @default(false)
+  criadoEm     DateTime @default(now())
 
   @@index([empresaId])
   @@index([filialId])

@@ -50,4 +50,43 @@ export class DashboardService {
     });
     return produtos.filter(p => p.estoqueAtual <= p.estoqueMinimo).slice(0, 20);
   }
+
+  async executivo(ctx: TenantContext, dataInicio?: string, dataFim?: string) {
+    const inicio = dataInicio ? new Date(dataInicio) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    const fim = dataFim ? new Date(`${dataFim}T23:59:59`) : new Date();
+    const wherePeriodo = { ...tenantWhere(ctx), criadoEm: { gte: inicio, lte: fim } };
+
+    const [vendas, compras, receber, pagar, caixa, osPorStatus, produtosCriticos] = await Promise.all([
+      prisma.venda.findMany({ where: { ...wherePeriodo, status: "CONCLUIDA" }, select: { valorTotal: true } }),
+      prisma.pedidoCompra.findMany({ where: { ...wherePeriodo, status: { not: "CANCELADO" } }, select: { valorTotal: true } }),
+      prisma.contaReceber.findMany({ where: { ...tenantWhere(ctx), status: { in: ["ABERTO", "PARCIAL"] } }, select: { valor: true, valorBaixado: true } }),
+      prisma.contaPagar.findMany({ where: { ...tenantWhere(ctx), status: { in: ["ABERTO", "PARCIAL"] } }, select: { valor: true, valorBaixado: true } }),
+      prisma.movimentoCaixa.findMany({ where: tenantWhere(ctx), select: { tipo: true, valor: true } }),
+      prisma.ordemServico.groupBy({ by: ["status"], where: tenantWhere(ctx), _count: { id: true } }),
+      prisma.produto.findMany({ where: { ...tenantWhere(ctx), ativo: true }, select: { id: true, nome: true, codigoInterno: true, estoqueAtual: true, estoqueMinimo: true } }),
+    ]);
+
+    const receita = vendas.reduce((s, v) => s + Number(v.valorTotal), 0);
+    const custoCompras = compras.reduce((s, c) => s + Number(c.valorTotal), 0);
+    const aReceber = receber.reduce((s, c) => s + Number(c.valor) - Number(c.valorBaixado), 0);
+    const aPagar = pagar.reduce((s, c) => s + Number(c.valor) - Number(c.valorBaixado), 0);
+    const saldoCaixa = caixa.reduce((s, m) => s + (m.tipo === "ENTRADA" ? Number(m.valor) : -Number(m.valor)), 0);
+    const estoqueCritico = produtosCriticos.filter((p) => p.estoqueAtual <= p.estoqueMinimo);
+
+    return {
+      periodo: { dataInicio: inicio.toISOString(), dataFim: fim.toISOString() },
+      receita,
+      custoCompras,
+      margemGerencial: receita - custoCompras,
+      aReceber,
+      aPagar,
+      saldoCaixa,
+      saldoProjetado: saldoCaixa + aReceber - aPagar,
+      vendasQuantidade: vendas.length,
+      comprasQuantidade: compras.length,
+      osPorStatus: osPorStatus.map((item) => ({ status: item.status, total: item._count.id })),
+      estoqueCritico: estoqueCritico.slice(0, 10),
+    };
+  }
+
 }

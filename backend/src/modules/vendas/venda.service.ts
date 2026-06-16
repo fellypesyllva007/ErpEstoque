@@ -118,6 +118,13 @@ export class VendaService {
   async indicadoresHoje(ctx: TenantContext) {
     const hoje = new Date(); hoje.setHours(0,0,0,0);
     const vendas = await prisma.venda.findMany({ where: { ...tenantWhere(ctx), status: "CONCLUIDA", criadoEm: { gte: hoje } }, include: { itens: true } });
-    return { quantidade: vendas.length, faturamento: vendas.reduce((s, v) => s + Number(v.valorTotal), 0), itensVendidos: vendas.flatMap(v => v.itens).reduce((s, i) => s + i.quantidade, 0) };
+    const faturamentoHoje = vendas.reduce((s, v) => s + Number(v.valorTotal), 0);
+    return {
+      vendasHoje: vendas.length,
+      faturamentoHoje,
+      quantidade: vendas.length,
+      faturamento: faturamentoHoje,
+      itensVendidos: vendas.flatMap(v => v.itens).reduce((s, i) => s + i.quantidade, 0),
+    };
   }
 }

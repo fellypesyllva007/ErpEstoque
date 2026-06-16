@@ -12,6 +12,7 @@ class _DashboardPageState extends State<DashboardPage> {
   final _controller = DashboardController();
   Map<String, dynamic>? _indicadores;
   Map<String, dynamic>? _vendas;
+  Map<String, dynamic>? _executivo;
   List<dynamic> _alertas = [];
   List<dynamic> _movRecentes = [];
   bool _carregando = true;
@@ -27,12 +28,14 @@ class _DashboardPageState extends State<DashboardPage> {
         _controller.alertasEstoque(),
         _controller.movimentacoesRecentes(),
         _controller.indicadoresVendas(),
+        _controller.dashboardExecutivo(),
       ]);
       setState(() {
         _indicadores = results[0] as Map<String, dynamic>;
         _alertas = results[1] as List;
         _movRecentes = results[2] as List;
         _vendas = results[3] as Map<String, dynamic>;
+        _executivo = results[4] as Map<String, dynamic>;
         _carregando = false;
       });
     } catch (_) { setState(() => _carregando = false); }
@@ -68,6 +71,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     final ind = _indicadores;
     final vnd = _vendas;
+    final exec = _executivo;
     return ErpScaffold(
       titulo: 'Dashboard',
       body: _carregando
@@ -78,6 +82,16 @@ class _DashboardPageState extends State<DashboardPage> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('Cockpit Executivo', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 12, runSpacing: 12, children: [
+                    _card('Receita', 'R\$ ${((exec?['receita'] ?? 0) as num).toStringAsFixed(2)}', Icons.trending_up, Colors.green),
+                    _card('Margem', 'R\$ ${((exec?['margemGerencial'] ?? 0) as num).toStringAsFixed(2)}', Icons.insights, Colors.blue),
+                    _card('A Receber', 'R\$ ${((exec?['aReceber'] ?? 0) as num).toStringAsFixed(2)}', Icons.call_received, Colors.teal),
+                    _card('A Pagar', 'R\$ ${((exec?['aPagar'] ?? 0) as num).toStringAsFixed(2)}', Icons.call_made, Colors.red),
+                    _card('Saldo Projetado', 'R\$ ${((exec?['saldoProjetado'] ?? 0) as num).toStringAsFixed(2)}', Icons.account_balance, Colors.purple),
+                  ]),
+                  const SizedBox(height: 20),
                   const Text('Estoque', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Wrap(spacing: 12, runSpacing: 12, children: [
