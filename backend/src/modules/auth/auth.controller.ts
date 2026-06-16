@@ -22,11 +22,13 @@ export class AuthController {
 
   async refresh(req: Request, res: Response) {
     try {
-      const { refreshToken } = req.body;
+      const { refreshToken, empresaId, filialId } = req.body;
 
       const resultado =
         await authService.refreshAccessToken(
-          refreshToken
+          refreshToken,
+          empresaId,
+          filialId
         );
 
       return res.status(200).json(resultado);
@@ -56,6 +58,22 @@ export class AuthController {
           error instanceof Error
             ? error.message
             : "Erro ao realizar logout",
+      });
+    }
+  }
+
+  async trocarContexto(req: AuthRequest, res: Response) {
+    try {
+      const { empresaId, filialId } = req.body;
+      if (!req.user?.sub || !empresaId || !filialId) {
+        return res.status(400).json({ message: "empresaId e filialId são obrigatórios" });
+      }
+
+      const resultado = await authService.trocarContexto(req.user.sub, empresaId, filialId);
+      return res.status(200).json(resultado);
+    } catch (error) {
+      return res.status(403).json({
+        message: error instanceof Error ? error.message : "Erro ao trocar contexto",
       });
     }
   }
