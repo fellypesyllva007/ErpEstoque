@@ -61,6 +61,10 @@ async function main() {
       telas: [{ codigo: "base", nome: "Cadastros base", perms: ["visualizar","criar","editar","excluir"] }] },
     { codigo: "financeiro", nome: "Financeiro",
       telas: [{ codigo: "painel", nome: "Painel Financeiro", perms: ["visualizar","criar","baixar","estornar"] }] },
+    { codigo: "fiscal", nome: "Fiscal",
+      telas: [{ codigo: "nfe", nome: "NF-e/NFC-e", perms: ["visualizar","criar","validar","transmitir","cancelar"] }] },
+    { codigo: "notificacoes", nome: "Notificações",
+      telas: [{ codigo: "alertas", nome: "Alertas", perms: ["visualizar"] }] },
   ];
 
   for (const mod of modulos) {

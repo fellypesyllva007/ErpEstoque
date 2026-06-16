@@ -20,6 +20,12 @@ router.post(
   authController.logout.bind(authController)
 );
 
+router.post(
+  "/contexto",
+  authMiddleware,
+  authController.trocarContexto.bind(authController)
+);
+
 router.get(
   "/me",
   authMiddleware,

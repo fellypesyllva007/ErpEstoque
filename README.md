@@ -140,3 +140,41 @@ Antes de publicar ou expor o backend fora do ambiente local/rede confiável:
 ## Multiempresa KoreERP
 
 As rotas operacionais exigem JWT com `empresaId`/`filialId` ou cabeçalhos `X-Empresa-Id` e `X-Filial-Id`. O middleware `requireTenant` valida o vínculo em `usuarios_filiais`; serviços críticos usam filtros por tenant para impedir leitura cruzada entre empresas/filiais. Consulte `docs/koreerp.md` para detalhes.
+
+## Autenticação multiempresa
+
+O login é multiempresa/multifilial. A resposta de `POST /auth/login` contém:
+
+- `token` JWT com `sub`, `usuario`, `perfil`, `empresaId` e `filialId` quando um contexto válido foi selecionado.
+- `refreshToken` opaco para renovação segura.
+- `permissoes` no formato `modulo.tela.acao`, usado pelo menu e pelas rotas protegidas.
+- `acessos`, com as empresas e filiais ativas vinculadas ao usuário.
+
+Quando o usuário tiver mais de um vínculo ativo, informe `empresaId` e `filialId` no login ou use `POST /auth/contexto` com um token válido para trocar o contexto ativo. O backend valida o vínculo em `usuarios_filiais` e bloqueia qualquer contexto de empresa/filial que não pertença ao usuário.
+
+Exemplo:
+
+```bash
+curl -X POST http://localhost:4000/auth/contexto \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"empresaId":"...","filialId":"..."}'
+```
+
+## Comandos de teste e build
+
+```bash
+cd backend
+npm install
+npx prisma generate
+npx prisma migrate dev
+npm run build
+npm test
+
+cd ../frontend
+flutter pub get
+flutter analyze
+flutter build web
+```
+
+> Observação: `npx prisma migrate dev` requer `DATABASE_URL`/`datasource.url` configurado no ambiente; os comandos Flutter requerem o SDK Flutter instalado no PATH.
