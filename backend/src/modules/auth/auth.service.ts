@@ -19,167 +19,71 @@ export class AuthService {
       where: { perfilId },
       include: { permissao: { include: { tela: { include: { modulo: true } } } } },
     });
-
-    return perfilPermissoes.map((item) =>
-      montarCodigoPermissao(
-        item.permissao.tela.modulo.codigo,
-        item.permissao.tela.codigo,
-        item.permissao.codigo
-      )
-    );
+    return perfilPermissoes.map((item) => montarCodigoPermissao(item.permissao.tela.modulo.codigo, item.permissao.tela.codigo, item.permissao.codigo));
   }
 
-  private selecionarContexto(
-    acessos: Awaited<ReturnType<AuthService["listarAcessos"]>>,
-    empresaId?: string,
-    filialId?: string
-  ) {
+  private selecionarContexto(acessos: Awaited<ReturnType<AuthService["listarAcessos"]>>, empresaId?: string, filialId?: string) {
     if (empresaId || filialId) {
       const acesso = acessos.find((item) => item.empresaId === empresaId && item.filialId === filialId);
       if (!acesso) throw new Error("Usuário sem acesso à empresa/filial informada");
       return acesso;
     }
-
-    const acessos = await prisma.usuarioFilial.findMany({
-      where: { usuarioId: usuario.id, ativo: true },
-      orderBy: { criadoEm: "asc" },
-    });
-
-    const empresaId = data.empresaId ?? usuario.empresaId ?? acessos[0]?.empresaId;
-    const filialId = data.filialId ?? usuario.filialId ?? acessos.find((a) => a.empresaId === empresaId)?.filialId;
-
-    if (!empresaId || !filialId || !acessos.some((a) => a.empresaId === empresaId && a.filialId === filialId)) {
-      throw new Error("Usuário sem contexto empresarial válido");
-    }
-
-    const token = gerarAccessToken(
-      {
-        id: usuario.id,
-        usuario: usuario.usuario,
-        perfil: usuario.perfil.nome,
-        empresaId,
-        filialId,
-      },
-      process.env.JWT_SECRET as string
-    );
-
-    return acessos[0];
+    const acesso = acessos[0];
+    if (!acesso) throw new Error("Usuário sem contexto empresarial válido");
+    return acesso;
   }
 
-    await prisma.$transaction([
-      prisma.refreshToken.create({
-        data: {
-          usuarioId: usuario.id,
-          token: refreshToken.token,
-          expiraEm: refreshToken.expiraEm,
-        },
-      }),
-      prisma.usuario.update({
-        where: { id: usuario.id },
-        data: { ultimoLogin: new Date() },
-      }),
-      prisma.auditoriaGeral.create({
-        data: { usuarioId: usuario.id, empresaId, filialId, tabela: "auth", registro: usuario.id, acao: "LOGIN" },
-      }),
-    ]);
-
+  async login(data: LoginRequest): Promise<LoginResponse & { permissoes: string[] }> {
+    const usuario = await prisma.usuario.findUnique({ where: { usuario: data.usuario }, include: { perfil: true } });
     if (!usuario || !usuario.ativo) throw new Error("Usuário ou senha inválidos");
-
     const senhaValida = await bcrypt.compare(data.senha, usuario.senhaHash);
     if (!senhaValida) throw new Error("Usuário ou senha inválidos");
-
     const acessos = await this.listarAcessos(usuario.id);
     if (!acessos.length) throw new Error("Usuário sem vínculo ativo com empresa/filial");
-
     const contexto = this.selecionarContexto(acessos, data.empresaId ?? usuario.empresaId ?? undefined, data.filialId ?? usuario.filialId ?? undefined);
     const permissoes = await this.listarPermissoes(usuario.perfilId);
-
     const token = gerarAccessToken({ id: usuario.id, usuario: usuario.usuario, perfil: usuario.perfil.nome, empresaId: contexto.empresaId, filialId: contexto.filialId }, process.env.JWT_SECRET as string);
     const refreshToken = criarRefreshToken();
-
     await prisma.$transaction([
       prisma.refreshToken.create({ data: { usuarioId: usuario.id, token: refreshToken.token, expiraEm: refreshToken.expiraEm } }),
       prisma.usuario.update({ where: { id: usuario.id }, data: { ultimoLogin: new Date(), empresaId: contexto.empresaId, filialId: contexto.filialId } }),
       prisma.auditoriaGeral.create({ data: { usuarioId: usuario.id, empresaId: contexto.empresaId, filialId: contexto.filialId, tabela: "auth", registro: usuario.id, acao: "LOGIN" } }),
     ]);
-
-    return {
-      id: usuario.id,
-      nome: usuario.nome,
-      usuario: usuario.usuario,
-      perfil: usuario.perfil.nome,
-      empresaId,
-      filialId,
-      primeiroAcesso: usuario.senhaTemporaria,
-      token,
-      refreshToken: refreshToken.token,
-    };
+    return { id: usuario.id, nome: usuario.nome, usuario: usuario.usuario, perfil: usuario.perfil.nome, empresaId: contexto.empresaId, filialId: contexto.filialId, primeiroAcesso: usuario.senhaTemporaria, token, refreshToken: refreshToken.token, permissoes };
   }
 
   async trocarContexto(usuarioId: string, empresaId: string, filialId: string) {
     const usuario = await prisma.usuario.findUnique({ where: { id: usuarioId }, include: { perfil: true } });
     if (!usuario || !usuario.ativo) throw new Error("Usuário não encontrado ou inativo");
-
     const acessos = await this.listarAcessos(usuario.id);
     const contexto = this.selecionarContexto(acessos, empresaId, filialId);
     const permissoes = await this.listarPermissoes(usuario.perfilId);
     const token = gerarAccessToken({ id: usuario.id, usuario: usuario.usuario, perfil: usuario.perfil.nome, empresaId: contexto.empresaId, filialId: contexto.filialId }, process.env.JWT_SECRET as string);
-
     await prisma.$transaction([
       prisma.usuario.update({ where: { id: usuario.id }, data: { empresaId: contexto.empresaId, filialId: contexto.filialId } }),
       prisma.auditoriaGeral.create({ data: { usuarioId: usuario.id, empresaId: contexto.empresaId, filialId: contexto.filialId, tabela: "auth", registro: usuario.id, acao: "TROCA_CONTEXTO" } }),
     ]);
-
     return { token, empresaId: contexto.empresaId, filialId: contexto.filialId, permissoes };
   }
 
-    const acessos = await prisma.usuarioFilial.findMany({
-      where: { usuarioId: tokenRegistro.usuario.id, ativo: true },
-      orderBy: { criadoEm: "asc" },
-    });
-    const empresaId = tokenRegistro.usuario.empresaId ?? acessos[0]?.empresaId;
-    const filialId = tokenRegistro.usuario.filialId ?? acessos[0]?.filialId;
-
-    if (!empresaId || !filialId) {
-      throw new Error("Contexto empresarial não encontrado para o usuário");
-    }
-
-    const accessToken = gerarAccessToken(
-      {
-        id: tokenRegistro.usuario.id,
-        usuario: tokenRegistro.usuario.usuario,
-        perfil: tokenRegistro.usuario.perfil.nome,
-        empresaId,
-        filialId,
-      },
-      process.env.JWT_SECRET as string
-    );
-
+  async refreshAccessToken(refreshToken: string, empresaId?: string, filialId?: string) {
+    const tokenRegistro = await prisma.refreshToken.findUnique({ where: { token: refreshToken }, include: { usuario: { include: { perfil: true } } } });
+    if (!tokenRegistro || tokenRegistro.revogado || tokenRegistro.expiraEm < new Date()) throw new Error("Refresh token inválido");
     const acessos = await this.listarAcessos(tokenRegistro.usuario.id);
     const contexto = this.selecionarContexto(acessos, empresaId ?? tokenRegistro.usuario.empresaId ?? undefined, filialId ?? tokenRegistro.usuario.filialId ?? undefined);
     const accessToken = gerarAccessToken({ id: tokenRegistro.usuario.id, usuario: tokenRegistro.usuario.usuario, perfil: tokenRegistro.usuario.perfil.nome, empresaId: contexto.empresaId, filialId: contexto.filialId }, process.env.JWT_SECRET as string);
     const novoRefreshToken = criarRefreshToken();
-
     await prisma.$transaction([
       prisma.refreshToken.update({ where: { id: tokenRegistro.id }, data: { revogado: true } }),
       prisma.refreshToken.create({ data: { usuarioId: tokenRegistro.usuario.id, token: novoRefreshToken.token, expiraEm: novoRefreshToken.expiraEm } }),
     ]);
-
     return { token: accessToken, refreshToken: novoRefreshToken.token, empresaId: contexto.empresaId, filialId: contexto.filialId };
   }
 
   async logout(refreshToken: string) {
     const tokens = await prisma.refreshToken.findMany({ where: { token: refreshToken }, select: { usuarioId: true } });
-    await prisma.refreshToken.updateMany({
-      where: { token: refreshToken },
-      data: { revogado: true },
-    });
-    for (const item of tokens) {
-      await prisma.auditoriaGeral.create({ data: { usuarioId: item.usuarioId, tabela: "auth", registro: item.usuarioId, acao: "LOGOUT" } });
-    }
-
-    return {
-      message: "Logout realizado com sucesso",
-    };
+    await prisma.refreshToken.updateMany({ where: { token: refreshToken }, data: { revogado: true } });
+    for (const item of tokens) await prisma.auditoriaGeral.create({ data: { usuarioId: item.usuarioId, tabela: "auth", registro: item.usuarioId, acao: "LOGOUT" } });
+    return { message: "Logout realizado com sucesso" };
   }
 }

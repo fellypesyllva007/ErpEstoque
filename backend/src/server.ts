@@ -20,6 +20,7 @@ import licenciamentoRoutes from "./modules/licenciamento/licenciamento.routes.js
 import fiscalRoutes from "./modules/fiscal/fiscal.routes.js";
 import financeiroRoutes from "./modules/financeiro/financeiro.routes.js";
 import cadastrosRoutes from "./modules/cadastros/cadastros.routes.js";
+import saasRoutes from "./modules/saas/saas.routes.js";
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.get("/health", (_req, res) => res.json({ status: "ok", ts: new Date().toISOS
 app.get("/", (_req, res) => res.json({ sistema: "KoreERP", status: "online" }));
 
 app.use("/auth", authRoutes);
+app.use("/saas", saasRoutes);
 app.use("/dashboard", dashboardRoutes);
 app.use("/licenciamento", licenciamentoRoutes);
 app.use("/notificacoes", notificacoesRoutes);

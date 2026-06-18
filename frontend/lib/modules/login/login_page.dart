@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../home/home_page.dart';
 import 'login_service.dart';
+import '../saas/saas_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -119,7 +120,12 @@ class _LoginPageState extends State<LoginPage> {
                       : const Text('Entrar'),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SaasPage())),
+                child: const Text('Criar conta e contratar plano'),
+              ),
+              const SizedBox(height: 8),
               const Text(
                 'Versão 1.0.0',
                 style: TextStyle(fontSize: 12),

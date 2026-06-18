@@ -15,6 +15,7 @@ import '../fiscal/fiscal_page.dart';
 import '../financeiro/financeiro_page.dart';
 import '../cadastros/cadastros_page.dart';
 import '../login/login_page.dart';
+import '../saas/saas_page.dart';
 import '../../widgets/alerta_estoque_widget.dart';
 import '../../core/api_service.dart';
 
@@ -183,6 +184,7 @@ class _HomePageState extends State<HomePage> {
                   _modulo(context, Icons.attach_money, 'Financeiro', const FinanceiroPage(), Colors.green),
                   _modulo(context, Icons.settings_applications, 'Cadastros', const CadastrosPage(), Colors.blueGrey),
                   _modulo(context, Icons.admin_panel_settings, 'Usuários', const UsuariosPage(), Colors.purple),
+                  _modulo(context, Icons.cloud, 'SaaS', const SaasPage(), Colors.cyan),
                 ]),
                 const SizedBox(height: 80),
               ],
