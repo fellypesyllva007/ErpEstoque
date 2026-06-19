@@ -6,6 +6,57 @@ import { calcularAgingContas, consolidarDreGerencial } from "../../core/business
 const hoje = () => new Date();
 
 export class FinanceiroService {
+  private contasPadrao = {
+    caixa: { codigo: "1.1.1.01", nome: "Caixa e equivalentes", tipo: "ATIVO" },
+    clientes: { codigo: "1.1.2.01", nome: "Contas a receber de clientes", tipo: "ATIVO" },
+    fornecedores: { codigo: "2.1.1.01", nome: "Contas a pagar a fornecedores", tipo: "PASSIVO" },
+  };
+
+  private async garantirContaContabil(tx: any, ctx: TenantContext, conta: { codigo: string; nome: string; tipo: string }) {
+    return tx.contaContabil.upsert({
+      where: { empresaId_codigo: { empresaId: ctx.empresaId, codigo: conta.codigo } },
+      create: { ...tenantCreate(ctx), ...conta, ativo: true },
+      update: { ativo: true },
+    });
+  }
+
+  private async registrarPartidaDobrada(
+    tx: any,
+    ctx: TenantContext,
+    data: {
+      origem: string;
+      referenciaId: string;
+      historico: string;
+      valor: number;
+      dataCompetencia?: Date;
+      dataCaixa?: Date;
+      contaDebito: { codigo: string; nome: string; tipo: string };
+      contaCredito: { codigo: string; nome: string; tipo: string };
+      centroCustoId?: string | null;
+    }
+  ) {
+    if (!Number.isFinite(data.valor) || data.valor <= 0) throw new Error("Valor do lançamento contábil deve ser positivo");
+    const [contaDebito, contaCredito] = await Promise.all([
+      this.garantirContaContabil(tx, ctx, data.contaDebito),
+      this.garantirContaContabil(tx, ctx, data.contaCredito),
+    ]);
+    if (contaDebito.id === contaCredito.id) throw new Error("Conta de débito e crédito não podem ser iguais");
+    return tx.lancamentoContabil.create({
+      data: {
+        ...tenantCreate(ctx),
+        origem: data.origem,
+        referenciaId: data.referenciaId,
+        historico: data.historico,
+        valor: data.valor,
+        dataCompetencia: data.dataCompetencia ?? hoje(),
+        dataCaixa: data.dataCaixa ?? hoje(),
+        contaDebitoId: contaDebito.id,
+        contaCreditoId: contaCredito.id,
+        centroCustoId: data.centroCustoId ?? null,
+      },
+    });
+  }
+
   listarReceber(ctx: TenantContext) {
     return prisma.contaReceber.findMany({ where: tenantWhere(ctx), orderBy: { vencimento: "asc" } });
   }
@@ -24,7 +75,18 @@ export class FinanceiroService {
     const status = baixado >= Number(conta.valor) ? "BAIXADO" : "PARCIAL";
     return prisma.$transaction(async (tx) => {
       const atualizada = await tx.contaReceber.update({ where: { id }, data: { valorBaixado: baixado, status } });
-      await tx.movimentoCaixa.create({ data: { ...tenantCreate(ctx), tipo: "ENTRADA", origem: "CONTA_RECEBER", referenciaId: id, descricao: conta.descricao, valor } });
+      const movimento = await tx.movimentoCaixa.create({ data: { ...tenantCreate(ctx), tipo: "ENTRADA", origem: "CONTA_RECEBER", referenciaId: id, descricao: conta.descricao, valor } });
+      await this.registrarPartidaDobrada(tx, ctx, {
+        origem: "BAIXA_CONTA_RECEBER",
+        referenciaId: movimento.id,
+        historico: `Baixa de conta a receber: ${conta.descricao}`,
+        valor,
+        dataCaixa: movimento.dataMovimento,
+        dataCompetencia: movimento.dataMovimento,
+        contaDebito: this.contasPadrao.caixa,
+        contaCredito: this.contasPadrao.clientes,
+        centroCustoId: conta.centroCustoId,
+      });
       return atualizada;
     });
   }
@@ -47,7 +109,18 @@ export class FinanceiroService {
     const status = baixado >= Number(conta.valor) ? "BAIXADO" : "PARCIAL";
     return prisma.$transaction(async (tx) => {
       const atualizada = await tx.contaPagar.update({ where: { id }, data: { valorBaixado: baixado, status } });
-      await tx.movimentoCaixa.create({ data: { ...tenantCreate(ctx), tipo: "SAIDA", origem: "CONTA_PAGAR", referenciaId: id, descricao: conta.descricao, valor } });
+      const movimento = await tx.movimentoCaixa.create({ data: { ...tenantCreate(ctx), tipo: "SAIDA", origem: "CONTA_PAGAR", referenciaId: id, descricao: conta.descricao, valor } });
+      await this.registrarPartidaDobrada(tx, ctx, {
+        origem: "BAIXA_CONTA_PAGAR",
+        referenciaId: movimento.id,
+        historico: `Baixa de conta a pagar: ${conta.descricao}`,
+        valor,
+        dataCaixa: movimento.dataMovimento,
+        dataCompetencia: movimento.dataMovimento,
+        contaDebito: this.contasPadrao.fornecedores,
+        contaCredito: this.contasPadrao.caixa,
+        centroCustoId: conta.centroCustoId,
+      });
       return atualizada;
     });
   }
@@ -106,10 +179,31 @@ export class FinanceiroService {
     return { periodo: { dataInicio: inicio, dataFim: fim }, regime, receitas, despesas, resultado: receitas - despesas, gerencial };
   }
 
-  balancete(ctx: TenantContext, dataInicio?: string, dataFim?: string) {
+  async balancete(ctx: TenantContext, dataInicio?: string, dataFim?: string) {
     const inicio = dataInicio ? new Date(dataInicio) : new Date(new Date().getFullYear(), 0, 1);
     const fim = dataFim ? new Date(`${dataFim}T23:59:59`) : new Date();
-    return prisma.lancamentoContabil.groupBy({ by: ["contaDebitoId", "contaCreditoId"], where: { ...tenantWhere(ctx), estornado: false, dataCompetencia: { gte: inicio, lte: fim } }, _sum: { valor: true }, _count: { id: true } });
+    const lancamentos = await prisma.lancamentoContabil.findMany({
+      where: { ...tenantWhere(ctx), estornado: false, dataCompetencia: { gte: inicio, lte: fim } },
+      include: { contaDebito: true, contaCredito: true },
+    });
+    const contas = new Map<string, { contaId: string; codigo?: string; nome?: string; tipo?: string; debitos: number; creditos: number; saldo: number }>();
+    const acumular = (conta: any, lado: "debito" | "credito", valor: number) => {
+      if (!conta?.id) return;
+      const atual = contas.get(conta.id) ?? { contaId: conta.id, codigo: conta.codigo, nome: conta.nome, tipo: conta.tipo, debitos: 0, creditos: 0, saldo: 0 };
+      if (lado === "debito") atual.debitos += valor;
+      else atual.creditos += valor;
+      atual.saldo = atual.debitos - atual.creditos;
+      contas.set(conta.id, atual);
+    };
+    lancamentos.forEach((l) => {
+      const valor = Number(l.valor);
+      acumular(l.contaDebito, "debito", valor);
+      acumular(l.contaCredito, "credito", valor);
+    });
+    const linhas = [...contas.values()].sort((a, b) => (a.codigo ?? "").localeCompare(b.codigo ?? ""));
+    const totalDebitos = linhas.reduce((s, l) => s + l.debitos, 0);
+    const totalCreditos = linhas.reduce((s, l) => s + l.creditos, 0);
+    return { periodo: { dataInicio: inicio, dataFim: fim }, linhas, totalDebitos, totalCreditos, balanceado: totalDebitos === totalCreditos };
   }
 
   razao(ctx: TenantContext, contaId: string) {
