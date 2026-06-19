@@ -17,7 +17,9 @@ O projeto é um ERP para assistência técnica de celulares, com controle de pro
 
 Para o servidor Oracle Cloud Free Ampere ARM64 com Ubuntu 22.04, a opção mantida no repositório é a arquitetura Node/Express + TypeScript + Prisma/PostgreSQL já consolidada no projeto. Ela usa rotas por módulo, controllers e services, mantendo uma única stack de backend para reduzir consumo, simplificar build/deploy e evitar endpoints duplicados.
 
-As arquiteturas .NET avaliadas — Minimal API + repositórios Npgsql e Controllers + EF Core/AppDbContext — não devem coexistir neste repositório sem uma auditoria prévia do que precisa ser migrado. O roteiro `docs/auditoria-arquiteturas-dotnet.md` lista endpoints, regras, SQL otimizado, migrations e configurações que devem ser trazidos para Node/Express antes da remoção final; depois disso, o check `npm run architecture:check` em `backend` automatiza a verificação contra reintrodução de artefatos .NET.
+A revisão atual confirma que **não existem duas arquiteturas ativas no repositório**: o backend versionado é somente Node/Express + Prisma/PostgreSQL. As arquiteturas .NET avaliadas — Minimal API + repositórios Npgsql e Controllers + EF Core/AppDbContext — ficam documentadas apenas como legado externo/descartado. Caso algum código, regra ou migration dessas versões antigas apareça em branch, backup ou repositório externo, o roteiro `docs/auditoria-arquiteturas-dotnet.md` deve ser usado para migrar o que for necessário para Node/Express.
+
+O check `npm run architecture:check` em `backend` automatiza a verificação e falha se artefatos .NET/C# forem reintroduzidos.
 
 O backend é organizado por módulos em `backend/src/modules`:
 

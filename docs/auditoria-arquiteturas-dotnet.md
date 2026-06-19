@@ -1,10 +1,10 @@
-# Auditoria antes de descartar arquiteturas .NET
+# Auditoria de legado .NET descartado
 
 ## Contexto
 
-Antes de descartar definitivamente as arquiteturas **Minimal API + repositórios Npgsql** e **Controllers + EF Core/AppDbContext**, a decisão deve ser tratar o backend atual **Node/Express + TypeScript + Prisma/PostgreSQL** como arquitetura única apenas depois de conferir se há funcionalidades, regras ou modelagem que precisam ser migradas.
+O backend atual do repositório é **Node/Express + TypeScript + Prisma/PostgreSQL**. As arquiteturas **Minimal API + repositórios Npgsql** e **Controllers + EF Core/AppDbContext** não estão presentes como código ativo e devem ser tratadas como legado externo/descartado.
 
-Nesta revisão do repositório não foram encontrados artefatos .NET versionados (`*.cs`, `*.csproj`, `*.sln`, `Program.cs`, `AppDbContext` ou `appsettings*.json`). Portanto, não há código .NET local para copiar diretamente; o que precisa ser trazido deve vir de branch, backup, repositório externo ou documentação da implementação anterior.
+Nesta revisão do repositório não foram encontrados artefatos .NET versionados (`*.cs`, `*.csproj`, `*.sln`, `Program.cs`, `AppDbContext`, `appsettings*.json` ou `launchSettings.json`). Portanto, não há duas arquiteturas no código local. Qualquer funcionalidade que precise ser recuperada deve vir de branch, backup, repositório externo ou documentação da implementação anterior e ser migrada para a arquitetura Node/Express.
 
 ## Itens que precisam ser verificados e trazidos, se existirem
 
@@ -42,7 +42,7 @@ Trazer para a arquitetura atual qualquer item que exista apenas nessa implementa
 | Configuração de runtime | `backend/.env.example`, Dockerfile ou documentação de deploy |
 | Teste de regra crítica | `backend/tests/**/*.test.ts` |
 
-## Checklist obrigatório antes da remoção final
+## Checklist obrigatório se algum legado .NET for recuperado
 
 1. Inventariar branches, backups e repositórios externos que possam conter a implementação .NET.
 2. Comparar rotas antigas com as rotas atuais do Express.
@@ -51,12 +51,12 @@ Trazer para a arquitetura atual qualquer item que exista apenas nessa implementa
 5. Migrar regras/contratos ausentes para módulos Node/Express.
 6. Adicionar ou atualizar testes em `backend/tests` para cada regra migrada.
 7. Rodar `npm --prefix backend run architecture:check`, `npm --prefix backend test` e `npm --prefix backend run build`.
-8. Só então remover os artefatos .NET remanescentes e manter o check preventivo ativo.
+8. Só então arquivar/remover os artefatos .NET externos e manter o check preventivo ativo no repositório principal.
 
 ## Comandos usados nesta auditoria local
 
 ```bash
-find . -type f \( -name '*.cs' -o -name '*.csproj' -o -name '*.sln' \) -not -path './backend/node_modules/*' -print
+find . -type f \( -name '*.cs' -o -name '*.csproj' -o -name '*.sln' -o -name 'appsettings*.json' -o -name 'launchSettings.json' \) -not -path './backend/node_modules/*' -print
 git log --all --name-only --pretty=format: | rg '\.(cs|csproj|sln)$|appsettings.*\.json|Program\.cs|AppDbContext|Npgsql|Minimal API|EntityFramework' -n
 npm --prefix backend run architecture:check
 ```
