@@ -2,11 +2,12 @@ import { Router } from "express";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { requireTenant } from "../../core/tenant.js";
 import { permissionMiddleware } from "../../middlewares/permission.middleware.js";
+import { requireAssinaturaAtiva } from "../../middlewares/saas.middleware.js";
 import { FinanceiroController } from "./financeiro.controller.js";
 
 const router = Router();
 const c = new FinanceiroController();
-const secured = [authMiddleware, requireTenant, permissionMiddleware("financeiro.painel.visualizar")];
+const secured = [authMiddleware, requireTenant, requireAssinaturaAtiva, permissionMiddleware("financeiro.painel.visualizar")];
 
 router.get("/receber", ...secured, c.receber.bind(c));
 router.post("/receber", ...secured, c.criarReceber.bind(c));

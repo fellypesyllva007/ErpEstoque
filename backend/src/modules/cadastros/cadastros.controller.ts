@@ -6,6 +6,7 @@ export class CadastrosController {
   private service = new CadastrosService();
   empresas(_req: TenantRequest, res: Response) { return this.service.empresas().then((r) => res.json(r)); }
   filiais(req: TenantRequest, res: Response) { return this.service.filiais(req.tenant!).then((r) => res.json(r)); }
+  criarFilial(req: TenantRequest, res: Response) { return this.service.criarFilial(req.tenant!, req.body).then((r) => res.status(201).json(r)); }
   unidades(req: TenantRequest, res: Response) { return this.service.unidades(req.tenant!).then((r) => res.json(r)); }
   criarUnidade(req: TenantRequest, res: Response) { return this.service.criarUnidade(req.tenant!, req.body).then((r) => res.status(201).json(r)); }
   condicoes(req: TenantRequest, res: Response) { return this.service.condicoes(req.tenant!).then((r) => res.json(r)); }

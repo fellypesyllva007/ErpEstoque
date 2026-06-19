@@ -2,14 +2,16 @@ import { Router } from "express";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { requireTenant } from "../../core/tenant.js";
 import { permissionMiddleware } from "../../middlewares/permission.middleware.js";
+import { requireAssinaturaAtiva } from "../../middlewares/saas.middleware.js";
 import { CadastrosController } from "./cadastros.controller.js";
 
 const router = Router();
 const c = new CadastrosController();
-const secured = [authMiddleware, requireTenant, permissionMiddleware("cadastros.base.visualizar")];
+const secured = [authMiddleware, requireTenant, requireAssinaturaAtiva, permissionMiddleware("cadastros.base.visualizar")];
 
 router.get("/empresas", ...secured, c.empresas.bind(c));
 router.get("/filiais", ...secured, c.filiais.bind(c));
+router.post("/filiais", ...secured, c.criarFilial.bind(c));
 router.get("/unidades", ...secured, c.unidades.bind(c));
 router.post("/unidades", ...secured, c.criarUnidade.bind(c));
 router.get("/condicoes-pagamento", ...secured, c.condicoes.bind(c));

@@ -20,6 +20,11 @@ export class UsuarioService {
   }
 
   async criar(ctx: TenantContext, data: CreateUsuarioDto) {
+    const assinatura = await prisma.saasAssinatura.findFirst({ where: { empresaId: ctx.empresaId, status: "ATIVA" }, orderBy: { criadoEm: "desc" }, include: { plano: true } });
+    if (assinatura) {
+      const usuariosAtivos = await prisma.usuario.count({ where: { empresaId: ctx.empresaId, ativo: true } });
+      if (usuariosAtivos >= assinatura.plano.limiteUsuarios) throw new Error(`Limite de usuários do plano atingido (${assinatura.plano.limiteUsuarios})`);
+    }
     await prisma.perfil.findFirstOrThrow({ where: { id: data.perfilId, empresaId: ctx.empresaId } });
     const senhaHash = await bcrypt.hash(data.senha, 12);
     const usuario = await prisma.usuario.create({
