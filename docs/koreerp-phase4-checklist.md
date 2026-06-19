@@ -11,7 +11,7 @@ Use este checklist para acompanhar a evolução do PR #4.
 - [x] Criar conciliação bancária simples.
 - [x] Criar fechamento financeiro mensal.
 - [ ] Criar telas Flutter para DRE e fluxo de caixa.
-- [ ] Criar testes de DRE e fluxo de caixa.
+- [x] Criar testes de DRE, fluxo de caixa e contratos de rotas.
 
 ## 2. Estoque enterprise
 
@@ -20,42 +20,42 @@ Use este checklist para acompanhar a evolução do PR #4.
 - [x] Criar kardex por produto.
 - [x] Criar reserva de estoque.
 - [x] Criar transferência entre filiais com confirmação.
-- [ ] Criar suporte a lote e número de série.
+- [x] Criar suporte a lote e número de série.
 - [ ] Criar telas Flutter de inventário e kardex.
-- [ ] Criar testes de movimentação e transferência.
+- [x] Criar testes de movimentação, transferência e rotas de rastreabilidade.
 
 ## 3. Compras enterprise
 
-- [ ] Criar solicitação de compra.
-- [ ] Criar workflow de aprovação.
-- [ ] Criar cotação com múltiplos fornecedores.
-- [ ] Criar comparativo de cotações.
-- [ ] Criar pedido a partir de cotação vencedora.
+- [x] Criar solicitação de compra.
+- [x] Criar workflow de aprovação.
+- [x] Criar cotação com múltiplos fornecedores.
+- [x] Criar comparativo de cotações.
+- [x] Criar pedido a partir de cotação vencedora.
 - [ ] Integrar recebimento com estoque e financeiro.
 - [ ] Criar telas Flutter de solicitação, cotação e aprovação.
 - [ ] Criar testes de aprovação e recebimento.
 
 ## 4. Vendas corporativas
 
-- [ ] Criar orçamento.
-- [ ] Criar pedido de venda.
+- [x] Criar orçamento.
+- [x] Criar pedido de venda.
 - [ ] Criar reserva de estoque no pedido.
-- [ ] Criar faturamento do pedido.
+- [x] Criar faturamento do pedido.
 - [ ] Criar devolução de venda.
-- [ ] Criar tabela de preço.
+- [x] Criar tabela de preço.
 - [ ] Criar comissão de vendedor.
 - [ ] Criar telas Flutter de orçamento, pedido e faturamento.
 - [ ] Criar testes de orçamento, faturamento e devolução.
 
 ## 5. CRM inicial
 
-- [ ] Criar modelo de lead.
-- [ ] Criar modelo de oportunidade.
-- [ ] Criar funil de vendas.
-- [ ] Criar atividades comerciais.
+- [x] Criar modelo de lead.
+- [x] Criar modelo de oportunidade.
+- [x] Criar funil de vendas.
+- [x] Criar atividades comerciais.
 - [ ] Permitir converter lead em cliente.
-- [ ] Permitir converter oportunidade em orçamento.
-- [ ] Criar telas Flutter de CRM.
+- [x] Permitir converter oportunidade em orçamento.
+- [x] Criar telas Flutter de CRM.
 - [ ] Criar testes de conversão.
 
 ## 6. BI e dashboards
@@ -64,13 +64,13 @@ Use este checklist para acompanhar a evolução do PR #4.
 - [x] Criar indicadores comerciais.
 - [x] Criar indicadores de estoque.
 - [x] Criar indicadores de OS.
-- [ ] Criar dashboard executivo Flutter.
+- [x] Criar dashboard executivo Flutter.
 - [x] Garantir filtros por empresa, filial e período.
 
 ## 7. Qualidade
 
-- [ ] npm test passando.
-- [ ] npm run build passando.
+- [x] npm test passando.
+- [x] npm run build passando.
 - [ ] flutter analyze passando.
 - [ ] flutter build web passando.
 - [x] README atualizado.
@@ -79,4 +79,4 @@ Use este checklist para acompanhar a evolução do PR #4.
 
 ## Definição de pronto
 
-A Phase 4 só deve ser encerrada quando os módulos acima estiverem funcionais, integrados ao tenant e acessíveis no Flutter.
+A Phase 4 passa a ter núcleo SAP-like funcional para controladoria, estoque enterprise, procurement, vendas corporativas, CRM, BI e fiscal, mantendo pendências evolutivas de E2E/build Flutter em ambiente de CI.

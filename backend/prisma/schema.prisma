@@ -1164,6 +1164,66 @@ model ItemInventarioEstoque {
   @@map("itens_inventario_estoque")
 }
 
+
+model LoteEstoque {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  produtoId String
+  codigo String
+  validade DateTime?
+  quantidade Int @default(0)
+  bloqueado Int @default(0)
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  @@unique([empresaId, filialId, produtoId, codigo])
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([produtoId])
+  @@index([validade])
+  @@map("lotes_estoque")
+}
+
+model NumeroSerieEstoque {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  produtoId String
+  numeroSerie String
+  loteId String?
+  status String @default("DISPONIVEL")
+  referenciaId String?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  @@unique([empresaId, produtoId, numeroSerie])
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([produtoId])
+  @@index([status])
+  @@map("numeros_serie_estoque")
+}
+
+model BloqueioEstoque {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  produtoId String
+  loteId String?
+  quantidade Int
+  motivo String
+  status String @default("ATIVO")
+  criadoPor String?
+  liberadoPor String?
+  liberadoEm DateTime?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([produtoId])
+  @@index([status])
+  @@map("bloqueios_estoque")
+}
+
 model TransferenciaEstoque {
   empresaId String?
   filialOrigemId String?
