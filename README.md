@@ -8,7 +8,7 @@ KoreERP é um ERP multiempresa em Flutter + Node/Express/Prisma/PostgreSQL para 
 |---|---|---|
 | Dashboard | ✅ | Cockpit executivo, indicadores, alertas estoque, movimentações recentes, faturamento do dia com contexto empresa/filial |
 | Produtos | ✅ | CRUD, filtro por categoria, importar CSV, exportar CSV, etiquetas, busca por código de barras |
-| Estoque | ✅ | Entrada, saída, ajuste, histórico completo e contexto por filial |
+| Estoque | ✅ | Entrada, saída, ajuste, histórico completo, kardex por produto, saldo físico/reservado/disponível, reservas, inventário geral/cíclico e transferência entre filiais com status |
 | Compras | ✅ | Pedido de compra, recebimento parcial/total, histórico, cancelamento |
 | Vendas | ✅ | PDV com scanner, venda rápida, baixa automática de estoque, cancelamento com estorno |
 | Ordens de Serviço | ✅ | Abertura, atualização de status, peças utilizadas com baixa de estoque, laudo, mão de obra, garantia |
@@ -18,7 +18,7 @@ KoreERP é um ERP multiempresa em Flutter + Node/Express/Prisma/PostgreSQL para 
 | Notificações | ✅ | Widget flutuante em tempo real, alertas de estoque crítico e baixo |
 | Usuários | ✅ | CRUD, perfis, RBAC completo e vínculo empresa/filial |
 | Cadastros base | ✅ | Empresas, filiais, unidades, formas/condições de pagamento, centros de custo e plano de contas |
-| Financeiro | ✅ | Contas a receber/pagar, caixa, fluxo de caixa, DRE e baixas parciais/totais |
+| Financeiro | ✅ | Contas a receber/pagar, caixa, fluxo de caixa, DRE por período em regime caixa/competência, conciliação bancária, aprovação de pagamento, fechamento mensal, balancete, diário e razão |
 | Etiquetas | ✅ | Impressão HTML 80×40mm com código de barras |
 | Importação Excel | ✅ | CSV com template, criação automática de categorias/marcas |
 | Exportação Excel | ✅ | CSV de estoque, movimentações, vendas, sugestão de reposição |
