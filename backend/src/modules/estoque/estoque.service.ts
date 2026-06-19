@@ -56,4 +56,48 @@ export class EstoqueService {
       _sum: { quantidade: true },
     });
   }
+  async saldoDisponivel(ctx: TenantContext, produtoId: string) {
+    const produto = await prisma.produto.findFirstOrThrow({ where: { id: produtoId, ...tenantWhere(ctx) } });
+    const reservas = await prisma.reservaEstoque.aggregate({ where: { ...tenantWhere(ctx), produtoId, status: "ATIVA" }, _sum: { quantidade: true } });
+    const reservado = reservas._sum.quantidade ?? 0;
+    return { produtoId, estoqueFisico: produto.estoqueAtual, reservado, disponivel: produto.estoqueAtual - reservado };
+  }
+
+  async reservar(ctx: TenantContext, data: any) {
+    const saldo = await this.saldoDisponivel(ctx, data.produtoId);
+    if (saldo.disponivel < Number(data.quantidade)) throw new Error("Estoque disponível insuficiente para reserva");
+    return prisma.reservaEstoque.create({ data: { ...tenantCreate(ctx), produtoId: data.produtoId, origem: data.origem, referenciaId: data.referenciaId, quantidade: Number(data.quantidade) } });
+  }
+
+  kardex(ctx: TenantContext, produtoId: string) {
+    return prisma.movimentacaoEstoque.findMany({ where: { ...tenantWhere(ctx), produtoId }, orderBy: { criadoEm: "asc" } });
+  }
+
+  async abrirInventario(ctx: TenantContext, data: any) {
+    const inventario = await prisma.inventarioEstoque.create({ data: { ...tenantCreate(ctx), tipo: data.tipo ?? "GERAL", descricao: data.descricao, criadoPor: ctx.usuarioId } });
+    if (Array.isArray(data.produtos)) {
+      const produtos = await prisma.produto.findMany({ where: { ...tenantWhere(ctx), id: { in: data.produtos } } });
+      await prisma.itemInventarioEstoque.createMany({ data: produtos.map((p) => ({ ...tenantCreate(ctx), inventarioId: inventario.id, produtoId: p.id, estoqueSistema: p.estoqueAtual, estoqueContado: p.estoqueAtual, divergencia: 0 })) });
+    }
+    return inventario;
+  }
+
+  async contarInventario(ctx: TenantContext, itemId: string, estoqueContado: number, observacao?: string) {
+    const item = await prisma.itemInventarioEstoque.findFirstOrThrow({ where: { id: itemId, ...tenantWhere(ctx) } });
+    return prisma.itemInventarioEstoque.update({ where: { id: itemId }, data: { estoqueContado, divergencia: estoqueContado - item.estoqueSistema, observacao, status: estoqueContado === item.estoqueSistema ? "CONFERIDO" : "DIVERGENTE" } });
+  }
+
+  async listarInventarios(ctx: TenantContext) { return prisma.inventarioEstoque.findMany({ where: tenantWhere(ctx), orderBy: { iniciadoEm: "desc" } }); }
+
+  async criarTransferencia(ctx: TenantContext, data: any) {
+    await this.saldoDisponivel(ctx, data.produtoId).then((s) => { if (s.disponivel < Number(data.quantidade)) throw new Error("Estoque insuficiente para transferência"); });
+    return prisma.transferenciaEstoque.create({ data: { empresaId: ctx.empresaId, filialOrigemId: ctx.filialId, filialDestinoId: data.filialDestinoId, produtoId: data.produtoId, quantidade: Number(data.quantidade), observacao: data.observacao } });
+  }
+
+  async enviarTransferencia(ctx: TenantContext, id: string) {
+    const transf = await prisma.transferenciaEstoque.findFirstOrThrow({ where: { id, empresaId: ctx.empresaId, filialOrigemId: ctx.filialId } });
+    await this.registrarMovimentacao({ produtoId: transf.produtoId, tipo: "SAIDA", quantidade: transf.quantidade, observacao: `Transferência ${id}` }, ctx);
+    return prisma.transferenciaEstoque.update({ where: { id }, data: { status: "EM_TRANSITO", enviadoEm: new Date() } });
+  }
+
 }

@@ -18,5 +18,12 @@ router.post("/pagar/:id/baixar", ...secured, c.baixarPagar.bind(c));
 router.get("/caixa", ...secured, c.caixa.bind(c));
 router.get("/fluxo-caixa", ...secured, c.fluxo.bind(c));
 router.get("/dre", ...secured, c.dre.bind(c));
+router.get("/contabilidade/balancete", ...secured, c.balancete.bind(c));
+router.get("/contabilidade/diario", ...secured, c.diario.bind(c));
+router.get("/contabilidade/razao/:contaId", ...secured, c.razao.bind(c));
+router.post("/fechamento-mensal", ...secured, c.fecharPeriodo.bind(c));
+router.get("/conciliacao-bancaria", ...secured, c.conciliacoes.bind(c));
+router.post("/conciliacao-bancaria", ...secured, c.criarConciliacao.bind(c));
+router.post("/pagar/:id/aprovar", ...secured, c.aprovarPagamento.bind(c));
 
 export default router;

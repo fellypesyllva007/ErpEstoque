@@ -1007,3 +1007,180 @@ model SaasAssinatura {
   @@index([status])
   @@map("saas_assinaturas")
 }
+
+model PeriodoFinanceiro {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  ano Int
+  mes Int
+  status String @default("ABERTO")
+  fechadoEm DateTime?
+  fechadoPor String?
+  observacao String?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  @@unique([empresaId, filialId, ano, mes])
+  @@index([empresaId])
+  @@index([filialId])
+  @@map("periodos_financeiros")
+}
+
+model LancamentoContabil {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  dataCompetencia DateTime
+  dataCaixa DateTime?
+  origem String
+  referenciaId String?
+  contaDebitoId String?
+  contaCreditoId String?
+  centroCustoId String?
+  historico String
+  valor Decimal @db.Decimal(12, 2)
+  estornado Boolean @default(false)
+  criadoEm DateTime @default(now())
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([dataCompetencia])
+  @@index([origem])
+  @@map("lancamentos_contabeis")
+}
+
+model ConciliacaoBancaria {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  banco String
+  agencia String?
+  conta String?
+  dataExtrato DateTime
+  descricao String
+  valor Decimal @db.Decimal(12, 2)
+  tipo String
+  movimentoCaixaId String?
+  status String @default("PENDENTE")
+  conciliadoEm DateTime?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([status])
+  @@index([dataExtrato])
+  @@map("conciliacoes_bancarias")
+}
+
+model ContaRecorrente {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  tipo String
+  descricao String
+  valor Decimal @db.Decimal(12, 2)
+  diaVencimento Int
+  centroCustoId String?
+  contaContabilId String?
+  ativo Boolean @default(true)
+  proximaGeracao DateTime?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([tipo])
+  @@map("contas_recorrentes")
+}
+
+model AprovacaoPagamento {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  contaPagarId String
+  status String @default("PENDENTE")
+  solicitadoPor String?
+  aprovadoPor String?
+  aprovadoEm DateTime?
+  motivo String?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([contaPagarId])
+  @@index([status])
+  @@map("aprovacoes_pagamento")
+}
+
+model ReservaEstoque {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  produtoId String
+  origem String
+  referenciaId String?
+  quantidade Int
+  status String @default("ATIVA")
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([produtoId])
+  @@index([status])
+  @@map("reservas_estoque")
+}
+
+model InventarioEstoque {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  tipo String
+  status String @default("ABERTO")
+  descricao String?
+  iniciadoEm DateTime @default(now())
+  encerradoEm DateTime?
+  criadoPor String?
+  aprovadoPor String?
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([status])
+  @@map("inventarios_estoque")
+}
+
+model ItemInventarioEstoque {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  inventarioId String
+  produtoId String
+  estoqueSistema Int
+  estoqueContado Int
+  divergencia Int
+  status String @default("PENDENTE")
+  observacao String?
+  criadoEm DateTime @default(now())
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([inventarioId])
+  @@index([produtoId])
+  @@map("itens_inventario_estoque")
+}
+
+model TransferenciaEstoque {
+  empresaId String?
+  filialOrigemId String?
+  filialDestinoId String?
+  id String @id @default(uuid())
+  produtoId String
+  quantidade Int
+  status String @default("PENDENTE_SAIDA")
+  observacao String?
+  enviadoEm DateTime?
+  recebidoEm DateTime?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  @@index([empresaId])
+  @@index([filialOrigemId])
+  @@index([filialDestinoId])
+  @@index([produtoId])
+  @@index([status])
+  @@map("transferencias_estoque")
+}
