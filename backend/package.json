@@ -9,7 +9,8 @@
     "start": "node dist/server.js",
     "seed": "tsx prisma/seed.ts",
     "test": "tsx --test tests/**/*.test.ts",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "architecture:check": "bash scripts/check-architecture.sh"
   },
   "keywords": [],
   "author": "",
