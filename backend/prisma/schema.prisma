@@ -896,6 +896,8 @@ model ContaContabil {
   ativo        Boolean  @default(true)
   criadoEm     DateTime @default(now())
   atualizadoEm DateTime @updatedAt
+  lancamentosDebito LancamentoContabil[] @relation("LancamentoContaDebito")
+  lancamentosCredito LancamentoContabil[] @relation("LancamentoContaCredito")
 
   @@unique([empresaId, codigo])
   @@index([empresaId])
@@ -1041,10 +1043,14 @@ model LancamentoContabil {
   valor Decimal @db.Decimal(12, 2)
   estornado Boolean @default(false)
   criadoEm DateTime @default(now())
+  contaDebito ContaContabil? @relation("LancamentoContaDebito", fields: [contaDebitoId], references: [id])
+  contaCredito ContaContabil? @relation("LancamentoContaCredito", fields: [contaCreditoId], references: [id])
   @@index([empresaId])
   @@index([filialId])
   @@index([dataCompetencia])
   @@index([origem])
+  @@index([contaDebitoId])
+  @@index([contaCreditoId])
   @@map("lancamentos_contabeis")
 }
 
