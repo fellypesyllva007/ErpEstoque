@@ -21,10 +21,14 @@ export class EnterpriseController {
   aprovarSolicitacao = async (req: TenantRequest, res: Response) => ok(res, await service.aprovarSolicitacao(ctx(req), getRouteParam(req, "id")));
   cotacoesCompra = async (req: TenantRequest, res: Response) => ok(res, await service.cotacoesCompra(ctx(req)));
   criarCotacaoCompra = async (req: TenantRequest, res: Response) => created(res, await service.criarCotacaoCompra(ctx(req), req.body));
+  escolherCotacaoVencedora = async (req: TenantRequest, res: Response) => ok(res, await service.escolherCotacaoVencedora(ctx(req), getRouteParam(req, "id")));
   orcamentosVenda = async (req: TenantRequest, res: Response) => ok(res, await service.orcamentosVenda(ctx(req)));
   criarOrcamentoVenda = async (req: TenantRequest, res: Response) => created(res, await service.criarOrcamentoVenda(ctx(req), req.body));
+  aprovarOrcamento = async (req: TenantRequest, res: Response) => ok(res, await service.aprovarOrcamento(ctx(req), getRouteParam(req, "id")));
+  converterOportunidadeEmOrcamento = async (req: TenantRequest, res: Response) => created(res, await service.converterOportunidadeEmOrcamento(ctx(req), getRouteParam(req, "id")));
   pedidosVenda = async (req: TenantRequest, res: Response) => ok(res, await service.pedidosVenda(ctx(req)));
   criarPedidoVenda = async (req: TenantRequest, res: Response) => created(res, await service.criarPedidoVenda(ctx(req), req.body));
+  faturarPedidoVenda = async (req: TenantRequest, res: Response) => ok(res, await service.faturarPedidoVenda(ctx(req), getRouteParam(req, "id")));
   tabelasPreco = async (req: TenantRequest, res: Response) => ok(res, await service.tabelasPreco(ctx(req)));
   criarTabelaPreco = async (req: TenantRequest, res: Response) => created(res, await service.criarTabelaPreco(ctx(req), req.body));
   configuracoesTributarias = async (req: TenantRequest, res: Response) => ok(res, await service.configuracoesTributarias(ctx(req)));

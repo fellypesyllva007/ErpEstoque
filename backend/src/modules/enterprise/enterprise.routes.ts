@@ -14,9 +14,10 @@ router.get("/crm/oportunidades", ...secured, c.oportunidades); router.post("/crm
 router.get("/crm/atividades", ...secured, c.atividades); router.post("/crm/atividades", ...secured, c.criarAtividade);
 router.get("/crm/pipeline", ...secured, c.pipeline);
 router.get("/compras/solicitacoes", ...secured, c.solicitacoesCompra); router.post("/compras/solicitacoes", ...secured, c.criarSolicitacaoCompra); router.patch("/compras/solicitacoes/:id/aprovar", ...secured, c.aprovarSolicitacao);
-router.get("/compras/cotacoes", ...secured, c.cotacoesCompra); router.post("/compras/cotacoes", ...secured, c.criarCotacaoCompra);
-router.get("/vendas/orcamentos", ...secured, c.orcamentosVenda); router.post("/vendas/orcamentos", ...secured, c.criarOrcamentoVenda);
-router.get("/vendas/pedidos", ...secured, c.pedidosVenda); router.post("/vendas/pedidos", ...secured, c.criarPedidoVenda);
+router.get("/compras/cotacoes", ...secured, c.cotacoesCompra); router.post("/compras/cotacoes", ...secured, c.criarCotacaoCompra); router.patch("/compras/cotacoes/:id/vencedora", ...secured, c.escolherCotacaoVencedora);
+router.get("/vendas/orcamentos", ...secured, c.orcamentosVenda); router.post("/vendas/orcamentos", ...secured, c.criarOrcamentoVenda); router.patch("/vendas/orcamentos/:id/aprovar", ...secured, c.aprovarOrcamento);
+router.post("/crm/oportunidades/:id/converter-orcamento", ...secured, c.converterOportunidadeEmOrcamento);
+router.get("/vendas/pedidos", ...secured, c.pedidosVenda); router.post("/vendas/pedidos", ...secured, c.criarPedidoVenda); router.post("/vendas/pedidos/:id/faturar", ...secured, c.faturarPedidoVenda);
 router.get("/vendas/tabelas-preco", ...secured, c.tabelasPreco); router.post("/vendas/tabelas-preco", ...secured, c.criarTabelaPreco);
 router.get("/fiscal/configuracoes-tributarias", ...secured, c.configuracoesTributarias); router.post("/fiscal/configuracoes-tributarias", ...secured, c.criarConfiguracaoTributaria);
 router.get("/fiscal/entradas", ...secured, c.entradasFiscais); router.post("/fiscal/entradas", ...secured, c.criarEntradaFiscal);
