@@ -13,6 +13,12 @@ O projeto é um ERP para assistência técnica de celulares, com controle de pro
 
 ## Backend
 
+### Decisão de arquitetura única
+
+Para o servidor Oracle Cloud Free Ampere ARM64 com Ubuntu 22.04, a opção mantida no repositório é a arquitetura Node/Express + TypeScript + Prisma/PostgreSQL já consolidada no projeto. Ela usa rotas por módulo, controllers e services, mantendo uma única stack de backend para reduzir consumo, simplificar build/deploy e evitar endpoints duplicados.
+
+As arquiteturas .NET avaliadas — Minimal API + repositórios Npgsql e Controllers + EF Core/AppDbContext — não devem coexistir neste repositório sem uma auditoria prévia do que precisa ser migrado. O roteiro `docs/auditoria-arquiteturas-dotnet.md` lista endpoints, regras, SQL otimizado, migrations e configurações que devem ser trazidos para Node/Express antes da remoção final; depois disso, o check `npm run architecture:check` em `backend` automatiza a verificação contra reintrodução de artefatos .NET.
+
 O backend é organizado por módulos em `backend/src/modules`:
 
 - `auth`: login, refresh token, logout e `/auth/me`.

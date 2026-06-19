@@ -33,6 +33,12 @@ KoreERP é um ERP multiempresa em Flutter + Node/Express/Prisma/PostgreSQL para 
 - **Frontend:** Flutter Desktop (Windows/Linux/macOS)
 - **Banco:** PostgreSQL 16 (Docker)
 
+## Decisão de arquitetura
+
+Para manter o deploy simples no Oracle Cloud Free Ampere ARM64 com Ubuntu 22.04, o repositório deve conter somente uma arquitetura de backend. A arquitetura mantida é a atual: Node/Express com rotas por módulo, controllers/services e Prisma/PostgreSQL.
+
+Antes da remoção definitiva de qualquer implementação .NET, é obrigatório auditar o que precisa ser trazido das arquiteturas Minimal API com repositórios Npgsql e Controllers com EF Core/AppDbContext. O roteiro está em `docs/auditoria-arquiteturas-dotnet.md`; após a migração do que for necessário, o script `npm run architecture:check`, dentro de `backend`, falha se artefatos .NET forem reintroduzidos.
+
 ## Instalação
 
 ### Opção 1 — Docker Compose (recomendado)
