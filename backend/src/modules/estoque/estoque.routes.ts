@@ -24,4 +24,13 @@ router.post("/transferencias", authMiddleware, requireTenant, requireAssinaturaA
 router.post("/transferencias/:id/enviar", authMiddleware, requireTenant, requireAssinaturaAtiva, permissionMiddleware("estoque.movimentacoes.criar"), controller.enviarTransferencia.bind(controller));
 router.post("/transferencias/:id/receber", authMiddleware, requireTenant, requireAssinaturaAtiva, permissionMiddleware("estoque.movimentacoes.criar"), controller.receberTransferencia.bind(controller));
 
+
+router.get("/lotes", authMiddleware, requireTenant, requireAssinaturaAtiva, permissionMiddleware("estoque.movimentacoes.visualizar"), controller.listarLotes.bind(controller));
+router.post("/lotes", authMiddleware, requireTenant, requireAssinaturaAtiva, permissionMiddleware("estoque.movimentacoes.criar"), controller.criarLote.bind(controller));
+router.get("/series", authMiddleware, requireTenant, requireAssinaturaAtiva, permissionMiddleware("estoque.movimentacoes.visualizar"), controller.listarSeries.bind(controller));
+router.post("/series", authMiddleware, requireTenant, requireAssinaturaAtiva, permissionMiddleware("estoque.movimentacoes.criar"), controller.criarSerie.bind(controller));
+router.get("/bloqueios", authMiddleware, requireTenant, requireAssinaturaAtiva, permissionMiddleware("estoque.movimentacoes.visualizar"), controller.listarBloqueios.bind(controller));
+router.post("/bloqueios", authMiddleware, requireTenant, requireAssinaturaAtiva, permissionMiddleware("estoque.movimentacoes.criar"), controller.bloquearEstoque.bind(controller));
+router.post("/bloqueios/:id/liberar", authMiddleware, requireTenant, requireAssinaturaAtiva, permissionMiddleware("estoque.movimentacoes.criar"), controller.liberarBloqueio.bind(controller));
+
 export default router;

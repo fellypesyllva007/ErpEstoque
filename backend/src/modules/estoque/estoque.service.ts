@@ -59,9 +59,13 @@ export class EstoqueService {
   }
   async saldoDisponivel(ctx: TenantContext, produtoId: string) {
     const produto = await prisma.produto.findFirstOrThrow({ where: { id: produtoId, ...tenantWhere(ctx) } });
-    const reservas = await prisma.reservaEstoque.aggregate({ where: { ...tenantWhere(ctx), produtoId, status: "ATIVA" }, _sum: { quantidade: true } });
+    const [reservas, bloqueios] = await Promise.all([
+      prisma.reservaEstoque.aggregate({ where: { ...tenantWhere(ctx), produtoId, status: "ATIVA" }, _sum: { quantidade: true } }),
+      prisma.bloqueioEstoque.aggregate({ where: { ...tenantWhere(ctx), produtoId, status: "ATIVO" }, _sum: { quantidade: true } }),
+    ]);
     const reservado = reservas._sum.quantidade ?? 0;
-    return { produtoId, estoqueFisico: produto.estoqueAtual, reservado, disponivel: produto.estoqueAtual - reservado };
+    const bloqueado = bloqueios._sum.quantidade ?? 0;
+    return { produtoId, estoqueFisico: produto.estoqueAtual, reservado, bloqueado, disponivel: Math.max(0, produto.estoqueAtual - reservado - bloqueado) };
   }
 
   async reservar(ctx: TenantContext, data: any) {
@@ -140,6 +144,40 @@ export class EstoqueService {
       orderBy: { criadoEm: "desc" },
       take: 200,
     });
+  }
+
+  listarLotes(ctx: TenantContext, produtoId?: string) {
+    return prisma.loteEstoque.findMany({ where: { ...tenantWhere(ctx), ...(produtoId ? { produtoId } : {}) }, orderBy: [{ validade: "asc" }, { criadoEm: "desc" }] });
+  }
+
+  criarLote(ctx: TenantContext, data: any) {
+    return prisma.loteEstoque.create({ data: { ...tenantCreate(ctx), produtoId: data.produtoId, codigo: data.codigo, validade: data.validade ? new Date(data.validade) : undefined, quantidade: Number(data.quantidade ?? 0), bloqueado: Number(data.bloqueado ?? 0) } });
+  }
+
+  listarSeries(ctx: TenantContext, produtoId?: string) {
+    return prisma.numeroSerieEstoque.findMany({ where: { ...tenantWhere(ctx), ...(produtoId ? { produtoId } : {}) }, orderBy: { criadoEm: "desc" }, take: 300 });
+  }
+
+  criarSerie(ctx: TenantContext, data: any) {
+    return prisma.numeroSerieEstoque.create({ data: { ...tenantCreate(ctx), produtoId: data.produtoId, numeroSerie: data.numeroSerie, loteId: data.loteId, status: data.status ?? "DISPONIVEL", referenciaId: data.referenciaId } });
+  }
+
+  listarBloqueios(ctx: TenantContext, produtoId?: string) {
+    return prisma.bloqueioEstoque.findMany({ where: { ...tenantWhere(ctx), ...(produtoId ? { produtoId } : {}) }, orderBy: { criadoEm: "desc" } });
+  }
+
+  async bloquearEstoque(ctx: TenantContext, data: any) {
+    const saldo = await this.saldoDisponivel(ctx, data.produtoId);
+    if (saldo.disponivel < Number(data.quantidade)) throw new Error("Estoque disponível insuficiente para bloqueio");
+    const bloqueio = await prisma.bloqueioEstoque.create({ data: { ...tenantCreate(ctx), produtoId: data.produtoId, loteId: data.loteId, quantidade: Number(data.quantidade), motivo: data.motivo, criadoPor: ctx.usuarioId } });
+    await registrarAuditoria({ tenant: ctx, usuarioId: ctx.usuarioId, tabela: "bloqueios_estoque", registro: bloqueio.id, acao: "BLOQUEAR_ESTOQUE", dadosDepois: bloqueio });
+    return bloqueio;
+  }
+
+  async liberarBloqueio(ctx: TenantContext, id: string) {
+    const bloqueio = await prisma.bloqueioEstoque.update({ where: { id }, data: { status: "LIBERADO", liberadoPor: ctx.usuarioId, liberadoEm: new Date() } });
+    await registrarAuditoria({ tenant: ctx, usuarioId: ctx.usuarioId, tabela: "bloqueios_estoque", registro: id, acao: "LIBERAR_ESTOQUE", dadosDepois: bloqueio });
+    return bloqueio;
   }
 
 }

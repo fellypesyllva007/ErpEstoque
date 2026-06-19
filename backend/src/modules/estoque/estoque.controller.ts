@@ -43,4 +43,14 @@ export class EstoqueController {
   async listarTransferencias(req: TenantRequest, res: Response) { return res.json(await this.service.listarTransferencias(req.tenant!)); }
   async enviarTransferencia(req: TenantRequest, res: Response) { return res.json(await this.service.enviarTransferencia(req.tenant!, getRouteParam(req, "id"))); }
   async receberTransferencia(req: TenantRequest, res: Response) { return res.json(await this.service.receberTransferencia(req.tenant!, getRouteParam(req, "id"))); }
+  async listarLotes(req: TenantRequest, res: Response) { return res.json(await this.service.listarLotes(req.tenant!, getQueryString(req, "produtoId"))); }
+  async criarLote(req: TenantRequest, res: Response) { return res.status(201).json(await this.service.criarLote(req.tenant!, req.body)); }
+  async listarSeries(req: TenantRequest, res: Response) { return res.json(await this.service.listarSeries(req.tenant!, getQueryString(req, "produtoId"))); }
+  async criarSerie(req: TenantRequest, res: Response) { return res.status(201).json(await this.service.criarSerie(req.tenant!, req.body)); }
+  async listarBloqueios(req: TenantRequest, res: Response) { return res.json(await this.service.listarBloqueios(req.tenant!, getQueryString(req, "produtoId"))); }
+  async bloquearEstoque(req: TenantRequest, res: Response) {
+    try { return res.status(201).json(await this.service.bloquearEstoque(req.tenant!, req.body)); }
+    catch (error) { return res.status(400).json({ message: error instanceof Error ? error.message : "Erro ao bloquear estoque" }); }
+  }
+  async liberarBloqueio(req: TenantRequest, res: Response) { return res.json(await this.service.liberarBloqueio(req.tenant!, getRouteParam(req, "id"))); }
 }
