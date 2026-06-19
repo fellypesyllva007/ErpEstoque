@@ -52,10 +52,10 @@ export class SaasService {
     const usuarioLogin = assertTexto(data.usuario, "Usuário").toLowerCase();
     const senhaHash = await bcrypt.hash(data.senha, 10);
     try { return await prisma.$transaction(async (tx) => {
-      const perfil = await tx.perfil.create({ data: { nome: `Administrador - ${empresaNome}`, descricao: "Administrador da empresa SaaS" } });
-      await this.garantirPermissoesAdministrador(perfil.id, tx);
       const empresa = await tx.empresa.create({ data: { nome: empresaNome, cnpj } });
       const filial = await tx.filial.create({ data: { empresaId: empresa.id, nome: "Matriz", cnpj } });
+      const perfil = await tx.perfil.create({ data: { nome: `Administrador - ${empresaNome}`, descricao: "Administrador da empresa SaaS", empresaId: empresa.id, filialId: filial.id } });
+      await this.garantirPermissoesAdministrador(perfil.id, tx);
       const usuario = await tx.usuario.create({ data: { nome: responsavelNome, email, usuario: usuarioLogin, senhaHash, perfilId: perfil.id, empresaId: empresa.id, filialId: filial.id } });
       await tx.usuarioFilial.create({ data: { usuarioId: usuario.id, empresaId: empresa.id, filialId: filial.id } });
       const assinatura = await tx.saasAssinatura.create({ data: { empresaId: empresa.id, planoId: plano.id, valorMensal: plano.valorMensal, proximaCobrancaEm: proximaCobranca() }, include: { plano: true, empresa: true } });
