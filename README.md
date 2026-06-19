@@ -35,9 +35,11 @@ KoreERP é um ERP multiempresa em Flutter + Node/Express/Prisma/PostgreSQL para 
 
 ## Decisão de arquitetura
 
-Para manter o deploy simples no Oracle Cloud Free Ampere ARM64 com Ubuntu 22.04, o repositório deve conter somente uma arquitetura de backend. A arquitetura mantida é a atual: Node/Express com rotas por módulo, controllers/services e Prisma/PostgreSQL.
+O repositório mantém **uma única arquitetura de backend**: Node/Express com rotas por módulo, controllers/services e Prisma/PostgreSQL. Não há duas arquiteturas ativas no código versionado.
 
-Antes da remoção definitiva de qualquer implementação .NET, é obrigatório auditar o que precisa ser trazido das arquiteturas Minimal API com repositórios Npgsql e Controllers com EF Core/AppDbContext. O roteiro está em `docs/auditoria-arquiteturas-dotnet.md`; após a migração do que for necessário, o script `npm run architecture:check`, dentro de `backend`, falha se artefatos .NET forem reintroduzidos.
+As arquiteturas .NET avaliadas anteriormente — Minimal API com repositórios Npgsql e Controllers com EF Core/AppDbContext — foram tratadas como legado externo/descartado. Se alguma regra de negócio antiga for recuperada em branch, backup ou repositório externo, ela deve ser migrada para a stack Node/Express antes de qualquer código legado ser removido ou arquivado. O roteiro de conferência fica em `docs/auditoria-arquiteturas-dotnet.md`.
+
+Para evitar regressão, execute `npm run architecture:check` dentro de `backend`; o script falha se artefatos .NET/C# forem reintroduzidos.
 
 ## Instalação
 
