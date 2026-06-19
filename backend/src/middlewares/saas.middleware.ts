@@ -4,7 +4,7 @@ import { AuthRequest } from "./auth.middleware.js";
 import { TenantRequest } from "../core/tenant.js";
 import { montarCodigoPermissao } from "../core/business-rules.js";
 
-export const ASSINATURA_ATIVA = "ATIVA";
+import { avaliarAcessoAssinatura } from "../modules/saas/saas.rules.js";
 export const PERMISSAO_ADMIN_SAAS = "saas.admin.gerenciar";
 export const PERFIL_ADMIN_SAAS = "Administrador SaaS";
 
@@ -47,14 +47,8 @@ export async function requireAssinaturaAtiva(req: TenantRequest, res: Response, 
       orderBy: { criadoEm: "desc" },
       include: { plano: true },
     });
-    if (!assinatura) return next();
-    if (assinatura.status !== ASSINATURA_ATIVA) {
-      return res.status(402).json({
-        message: "Assinatura sem acesso ao ERP",
-        detalhes: `A assinatura da empresa está ${assinatura.status}. Regularize a assinatura para continuar usando os módulos operacionais.`,
-        statusAssinatura: assinatura.status,
-      });
-    }
+    const acesso = avaliarAcessoAssinatura(assinatura);
+    if (!acesso.permitido) return res.status(acesso.statusHttp).json(acesso);
     return next();
   } catch (error) {
     console.error(error);

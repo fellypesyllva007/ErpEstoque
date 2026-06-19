@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import { prisma } from "../../core/prisma/prisma.js";
 import { TenantContext, tenantCreate, tenantWhere } from "../../core/tenant.js";
 import { CreateUsuarioDto, UpdateUsuarioDto, AlterarSenhaDto } from "./usuario.types.js";
+import { assertAssinaturaOperacional } from "../saas/saas.rules.js";
 
 export class UsuarioService {
   async listar(ctx: TenantContext) {
@@ -20,11 +21,10 @@ export class UsuarioService {
   }
 
   async criar(ctx: TenantContext, data: CreateUsuarioDto) {
-    const assinatura = await prisma.saasAssinatura.findFirst({ where: { empresaId: ctx.empresaId, status: "ATIVA" }, orderBy: { criadoEm: "desc" }, include: { plano: true } });
-    if (assinatura) {
-      const usuariosAtivos = await prisma.usuario.count({ where: { empresaId: ctx.empresaId, ativo: true } });
-      if (usuariosAtivos >= assinatura.plano.limiteUsuarios) throw new Error(`Limite de usuários do plano atingido (${assinatura.plano.limiteUsuarios})`);
-    }
+    const assinatura = await prisma.saasAssinatura.findFirst({ where: { empresaId: ctx.empresaId }, orderBy: { criadoEm: "desc" }, include: { plano: true } });
+    assertAssinaturaOperacional(assinatura);
+    const usuariosAtivos = await prisma.usuario.count({ where: { empresaId: ctx.empresaId, ativo: true } });
+    if (usuariosAtivos >= assinatura!.plano.limiteUsuarios) throw new Error(`Limite de usuários do plano atingido (${assinatura!.plano.limiteUsuarios})`);
     await prisma.perfil.findFirstOrThrow({ where: { id: data.perfilId, empresaId: ctx.empresaId } });
     const senhaHash = await bcrypt.hash(data.senha, 12);
     const usuario = await prisma.usuario.create({
