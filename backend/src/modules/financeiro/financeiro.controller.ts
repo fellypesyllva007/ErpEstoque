@@ -14,6 +14,7 @@ export class FinanceiroController {
   baixarPagar(req: TenantRequest, res: Response) { return this.service.baixarPagar(req.tenant!, getRouteParam(req, "id"), Number(req.body.valor)).then((r) => res.json(r)); }
   caixa(req: TenantRequest, res: Response) { return this.service.movimentosCaixa(req.tenant!).then((r) => res.json(r)); }
   fluxo(req: TenantRequest, res: Response) { return this.service.fluxoCaixa(req.tenant!).then((r) => res.json(r)); }
+  inadimplencia(req: TenantRequest, res: Response) { return this.service.inadimplencia(req.tenant!).then((r) => res.json(r)); }
   dre(req: TenantRequest, res: Response) { return this.service.dre(req.tenant!, req.query.dataInicio as string | undefined, req.query.dataFim as string | undefined, req.query.regime as "CAIXA" | "COMPETENCIA" | undefined).then((r) => res.json(r)); }
   balancete(req: TenantRequest, res: Response) { return this.service.balancete(req.tenant!, req.query.dataInicio as string | undefined, req.query.dataFim as string | undefined).then((r) => res.json(r)); }
   razao(req: TenantRequest, res: Response) { return this.service.razao(req.tenant!, getRouteParam(req, "contaId")).then((r) => res.json(r)); }

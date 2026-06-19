@@ -64,7 +64,19 @@ export class FinanceiroService {
     const saldoCaixa = caixa.reduce((s, m) => s + (m.tipo === "ENTRADA" ? Number(m.valor) : -Number(m.valor)), 0);
     const aReceber = receber.reduce((s, c) => s + Number(c.valor) - Number(c.valorBaixado), 0);
     const aPagar = pagar.reduce((s, c) => s + Number(c.valor) - Number(c.valorBaixado), 0);
-    return { saldoCaixa, aReceber, aPagar, saldoProjetado: saldoCaixa + aReceber - aPagar, geradoEm: hoje() };
+    const entradasProjetadas = receber.map((c) => ({ data: c.vencimento, descricao: c.descricao, valor: Number(c.valor) - Number(c.valorBaixado), origem: "RECEBER" }));
+    const saidasProjetadas = pagar.map((c) => ({ data: c.vencimento, descricao: c.descricao, valor: Number(c.valor) - Number(c.valorBaixado), origem: "PAGAR" }));
+    const realizado = caixa.map((m) => ({ data: m.dataMovimento, descricao: m.descricao, valor: Number(m.valor), tipo: m.tipo, origem: m.origem }));
+    return { saldoCaixa, aReceber, aPagar, saldoProjetado: saldoCaixa + aReceber - aPagar, realizado, projetado: { entradas: entradasProjetadas, saidas: saidasProjetadas }, geradoEm: hoje() };
+  }
+
+  async inadimplencia(ctx: TenantContext) {
+    const hojeRef = new Date(); hojeRef.setHours(0, 0, 0, 0);
+    const contas = await prisma.contaReceber.findMany({ where: { ...tenantWhere(ctx), status: { in: ["ABERTO", "PARCIAL"] } }, orderBy: { vencimento: "asc" } });
+    const vencidas = contas.filter((c) => c.vencimento < hojeRef);
+    const aVencer = contas.filter((c) => c.vencimento >= hojeRef);
+    const soma = (lista: typeof contas) => lista.reduce((s, c) => s + Number(c.valor) - Number(c.valorBaixado), 0);
+    return { vencidas, aVencer, totalVencido: soma(vencidas), totalAVencer: soma(aVencer), quantidadeVencidas: vencidas.length, quantidadeAVencer: aVencer.length, geradoEm: new Date() };
   }
 
   private periodo(data = new Date()) { return { ano: data.getFullYear(), mes: data.getMonth() + 1 }; }

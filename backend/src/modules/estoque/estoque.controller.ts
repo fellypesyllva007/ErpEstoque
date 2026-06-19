@@ -33,7 +33,14 @@ export class EstoqueController {
   async kardex(req: TenantRequest, res: Response) { return res.json(await this.service.kardex(req.tenant!, getRouteParam(req, "produtoId"))); }
   async abrirInventario(req: TenantRequest, res: Response) { return res.status(201).json(await this.service.abrirInventario(req.tenant!, req.body)); }
   async listarInventarios(req: TenantRequest, res: Response) { return res.json(await this.service.listarInventarios(req.tenant!)); }
+  async itensInventario(req: TenantRequest, res: Response) { return res.json(await this.service.itensInventario(req.tenant!, getRouteParam(req, "id"))); }
+  async aprovarInventario(req: TenantRequest, res: Response) {
+    try { return res.json(await this.service.aprovarInventario(req.tenant!, getRouteParam(req, "id"))); }
+    catch (error) { return res.status(400).json({ message: error instanceof Error ? error.message : "Erro ao aprovar inventário" }); }
+  }
   async contarInventario(req: TenantRequest, res: Response) { return res.json(await this.service.contarInventario(req.tenant!, getRouteParam(req, "itemId"), Number(req.body.estoqueContado), req.body.observacao)); }
   async criarTransferencia(req: TenantRequest, res: Response) { return res.status(201).json(await this.service.criarTransferencia(req.tenant!, req.body)); }
+  async listarTransferencias(req: TenantRequest, res: Response) { return res.json(await this.service.listarTransferencias(req.tenant!)); }
   async enviarTransferencia(req: TenantRequest, res: Response) { return res.json(await this.service.enviarTransferencia(req.tenant!, getRouteParam(req, "id"))); }
+  async receberTransferencia(req: TenantRequest, res: Response) { return res.json(await this.service.receberTransferencia(req.tenant!, getRouteParam(req, "id"))); }
 }
