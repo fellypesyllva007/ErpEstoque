@@ -164,3 +164,15 @@ Antes de publicar ou expor o backend fora do ambiente local/rede confiável:
 ## Multiempresa KoreERP
 
 As rotas operacionais exigem JWT com `empresaId`/`filialId` ou cabeçalhos `X-Empresa-Id` e `X-Filial-Id`. O middleware `requireTenant` valida o vínculo em `usuarios_filiais`; serviços críticos usam filtros por tenant para impedir leitura cruzada entre empresas/filiais. Consulte `docs/koreerp.md` para detalhes.
+
+## Evolução SAP-like corporativa
+
+Esta versão amplia o núcleo enterprise para aproximar o KoreERP de um ERP corporativo integrado:
+
+- **Financeiro e controladoria**: plano de contas, centros de custo, contas recorrentes, DRE gerencial por regime de caixa/competência, aging de contas a receber, conciliação bancária, aprovação de pagamentos, fechamento mensal com trava de período e estorno auditado de caixa.
+- **Estoque enterprise**: inventário geral/cíclico com aprovação de divergência, kardex por produto, reserva de estoque, saldo físico/reservado/disponível e transferência entre filiais com saída e entrada confirmadas.
+- **Compras enterprise**: solicitação de compra com aprovação, cotação multi-fornecedor e marcação de cotação vencedora para suportar o ciclo formal de procurement.
+- **Vendas corporativas e CRM**: leads, oportunidades, atividades, pipeline, conversão de oportunidade em orçamento, aprovação de orçamento, pedido corporativo, faturamento e tabelas de preço.
+- **Fiscal e governança**: configurações tributárias por operação, entradas fiscais de compra, auditoria em operações sensíveis e testes de regras críticas de DRE, aging, estoque disponível e fechamento mensal.
+
+As rotas enterprise mantêm o isolamento por `empresaId`/`filialId` e devem ser consumidas pelas telas Flutter correspondentes com filtros por empresa, filial e período.

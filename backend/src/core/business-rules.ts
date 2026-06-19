@@ -132,3 +132,56 @@ export function montarCodigoPermissao(
 ): string {
   return `${moduloCodigo}.${telaCodigo}.${permissaoCodigo}`;
 }
+
+
+export type RegimeDre = "CAIXA" | "COMPETENCIA";
+
+export interface LancamentoDreResumo {
+  tipo: "RECEITA" | "DESPESA";
+  categoria?: string | null;
+  valor: number;
+}
+
+export function consolidarDreGerencial(lancamentos: LancamentoDreResumo[]) {
+  const linhas = new Map<string, { categoria: string; receitas: number; despesas: number; resultado: number }>();
+  for (const lancamento of lancamentos) {
+    const categoria = lancamento.categoria || "Sem categoria";
+    const linha = linhas.get(categoria) ?? { categoria, receitas: 0, despesas: 0, resultado: 0 };
+    if (lancamento.tipo === "RECEITA") linha.receitas += lancamento.valor;
+    else linha.despesas += lancamento.valor;
+    linha.resultado = linha.receitas - linha.despesas;
+    linhas.set(categoria, linha);
+  }
+  const detalhes = [...linhas.values()].sort((a, b) => a.categoria.localeCompare(b.categoria));
+  const receitas = detalhes.reduce((s, l) => s + l.receitas, 0);
+  const despesas = detalhes.reduce((s, l) => s + l.despesas, 0);
+  return { receitas, despesas, resultado: receitas - despesas, detalhes };
+}
+
+export function calcularSaldoDisponivel(estoqueFisico: number, reservado: number, bloqueado = 0) {
+  return {
+    estoqueFisico,
+    reservado,
+    bloqueado,
+    disponivel: Math.max(0, estoqueFisico - reservado - bloqueado),
+  };
+}
+
+export function assertPeriodoFinanceiroAberto(status?: string | null): void {
+  if (status === "FECHADO") throw new Error("Período financeiro fechado");
+}
+
+export function calcularAgingContas<T extends { vencimento: Date; valor: number; valorBaixado?: number }>(contas: T[], referencia = new Date()) {
+  const ref = new Date(referencia); ref.setHours(0, 0, 0, 0);
+  const buckets = { aVencer: 0, vencido1a30: 0, vencido31a60: 0, vencido61a90: 0, vencidoMais90: 0 };
+  for (const conta of contas) {
+    const saldo = conta.valor - (conta.valorBaixado ?? 0);
+    const dias = Math.floor((ref.getTime() - new Date(conta.vencimento).getTime()) / 86400000);
+    if (dias <= 0) buckets.aVencer += saldo;
+    else if (dias <= 30) buckets.vencido1a30 += saldo;
+    else if (dias <= 60) buckets.vencido31a60 += saldo;
+    else if (dias <= 90) buckets.vencido61a90 += saldo;
+    else buckets.vencidoMais90 += saldo;
+  }
+  return buckets;
+}

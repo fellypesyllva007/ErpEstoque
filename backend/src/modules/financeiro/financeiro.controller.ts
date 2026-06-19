@@ -15,6 +15,14 @@ export class FinanceiroController {
   caixa(req: TenantRequest, res: Response) { return this.service.movimentosCaixa(req.tenant!).then((r) => res.json(r)); }
   fluxo(req: TenantRequest, res: Response) { return this.service.fluxoCaixa(req.tenant!).then((r) => res.json(r)); }
   inadimplencia(req: TenantRequest, res: Response) { return this.service.inadimplencia(req.tenant!).then((r) => res.json(r)); }
+  agingReceber(req: TenantRequest, res: Response) { return this.service.agingReceber(req.tenant!).then((r) => res.json(r)); }
+  centrosCusto(req: TenantRequest, res: Response) { return this.service.centrosCusto(req.tenant!).then((r) => res.json(r)); }
+  criarCentroCusto(req: TenantRequest, res: Response) { return this.service.criarCentroCusto(req.tenant!, req.body).then((r) => res.status(201).json(r)); }
+  planoContas(req: TenantRequest, res: Response) { return this.service.planoContas(req.tenant!).then((r) => res.json(r)); }
+  criarContaContabil(req: TenantRequest, res: Response) { return this.service.criarContaContabil(req.tenant!, req.body).then((r) => res.status(201).json(r)); }
+  contasRecorrentes(req: TenantRequest, res: Response) { return this.service.contasRecorrentes(req.tenant!).then((r) => res.json(r)); }
+  criarContaRecorrente(req: TenantRequest, res: Response) { return this.service.criarContaRecorrente(req.tenant!, req.body).then((r) => res.status(201).json(r)); }
+  estornarCaixa(req: TenantRequest, res: Response) { return this.service.estornarMovimentoCaixa(req.tenant!, getRouteParam(req, "id"), req.body.motivo).then((r) => res.json(r)); }
   dre(req: TenantRequest, res: Response) { return this.service.dre(req.tenant!, req.query.dataInicio as string | undefined, req.query.dataFim as string | undefined, req.query.regime as "CAIXA" | "COMPETENCIA" | undefined).then((r) => res.json(r)); }
   balancete(req: TenantRequest, res: Response) { return this.service.balancete(req.tenant!, req.query.dataInicio as string | undefined, req.query.dataFim as string | undefined).then((r) => res.json(r)); }
   razao(req: TenantRequest, res: Response) { return this.service.razao(req.tenant!, getRouteParam(req, "contaId")).then((r) => res.json(r)); }

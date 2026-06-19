@@ -1,6 +1,7 @@
 import { prisma } from "../../core/prisma/prisma.js";
 import { registrarAuditoria } from "../../core/auditoria.js";
 import { TenantContext, tenantCreate, tenantWhere } from "../../core/tenant.js";
+import { calcularAgingContas, consolidarDreGerencial } from "../../core/business-rules.js";
 
 const hoje = () => new Date();
 
@@ -95,12 +96,14 @@ export class FinanceiroService {
       const lancamentos = await prisma.lancamentoContabil.findMany({ where: { ...tenantWhere(ctx), estornado: false, dataCompetencia: { gte: inicio, lte: fim } } });
       const receitas = lancamentos.filter((m) => m.origem.includes("RECEBER") || m.origem.includes("VENDA")).reduce((s, m) => s + Number(m.valor), 0);
       const despesas = lancamentos.filter((m) => m.origem.includes("PAGAR") || m.origem.includes("COMPRA")).reduce((s, m) => s + Number(m.valor), 0);
-      return { periodo: { dataInicio: inicio, dataFim: fim }, regime, receitas, despesas, resultado: receitas - despesas };
+      const gerencial = consolidarDreGerencial(lancamentos.map((m) => ({ tipo: m.origem.includes("RECEBER") || m.origem.includes("VENDA") ? "RECEITA" : "DESPESA", categoria: m.centroCustoId, valor: Number(m.valor) })));
+      return { periodo: { dataInicio: inicio, dataFim: fim }, regime, receitas, despesas, resultado: receitas - despesas, gerencial };
     }
     const caixa = await prisma.movimentoCaixa.findMany({ where: { ...tenantWhere(ctx), estornado: false, dataMovimento: { gte: inicio, lte: fim } } });
     const receitas = caixa.filter((m) => m.tipo === "ENTRADA").reduce((s, m) => s + Number(m.valor), 0);
     const despesas = caixa.filter((m) => m.tipo === "SAIDA").reduce((s, m) => s + Number(m.valor), 0);
-    return { periodo: { dataInicio: inicio, dataFim: fim }, regime, receitas, despesas, resultado: receitas - despesas };
+    const gerencial = consolidarDreGerencial(caixa.map((m) => ({ tipo: m.tipo === "ENTRADA" ? "RECEITA" : "DESPESA", categoria: m.origem, valor: Number(m.valor) })));
+    return { periodo: { dataInicio: inicio, dataFim: fim }, regime, receitas, despesas, resultado: receitas - despesas, gerencial };
   }
 
   balancete(ctx: TenantContext, dataInicio?: string, dataFim?: string) {
@@ -117,6 +120,27 @@ export class FinanceiroService {
     const inicio = dataInicio ? new Date(dataInicio) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     const fim = dataFim ? new Date(`${dataFim}T23:59:59`) : new Date();
     return prisma.lancamentoContabil.findMany({ where: { ...tenantWhere(ctx), dataCompetencia: { gte: inicio, lte: fim } }, orderBy: [{ dataCompetencia: "asc" }, { criadoEm: "asc" }] });
+  }
+
+
+  centrosCusto(ctx: TenantContext) { return prisma.centroCusto.findMany({ where: tenantWhere(ctx), orderBy: { codigo: "asc" } }); }
+  criarCentroCusto(ctx: TenantContext, data: any) { return prisma.centroCusto.create({ data: { ...tenantCreate(ctx), codigo: data.codigo, nome: data.nome, ativo: data.ativo ?? true } }); }
+  planoContas(ctx: TenantContext) { return prisma.contaContabil.findMany({ where: tenantWhere(ctx), orderBy: { codigo: "asc" } }); }
+  criarContaContabil(ctx: TenantContext, data: any) { return prisma.contaContabil.create({ data: { ...tenantCreate(ctx), codigo: data.codigo, nome: data.nome, tipo: data.tipo, ativo: data.ativo ?? true } }); }
+  contasRecorrentes(ctx: TenantContext) { return prisma.contaRecorrente.findMany({ where: tenantWhere(ctx), orderBy: { criadoEm: "desc" } }); }
+  criarContaRecorrente(ctx: TenantContext, data: any) { return prisma.contaRecorrente.create({ data: { ...tenantCreate(ctx), ...data, valor: Number(data.valor), proximaGeracao: data.proximaGeracao ? new Date(data.proximaGeracao) : undefined } }); }
+
+  async agingReceber(ctx: TenantContext) {
+    const contas = await prisma.contaReceber.findMany({ where: { ...tenantWhere(ctx), status: { in: ["ABERTO", "PARCIAL"] } } });
+    return { buckets: calcularAgingContas(contas.map((c) => ({ vencimento: c.vencimento, valor: Number(c.valor), valorBaixado: Number(c.valorBaixado) }))), geradoEm: new Date() };
+  }
+
+  async estornarMovimentoCaixa(ctx: TenantContext, id: string, motivo?: string) {
+    const mov = await prisma.movimentoCaixa.findFirstOrThrow({ where: { id, ...tenantWhere(ctx), estornado: false } });
+    await this.validarPeriodoAberto(ctx, mov.dataMovimento);
+    const estornado = await prisma.movimentoCaixa.update({ where: { id }, data: { estornado: true } });
+    await registrarAuditoria({ tenant: ctx, usuarioId: ctx.usuarioId, tabela: "movimentos_caixa", registro: id, acao: "ESTORNO_FINANCEIRO", dadosAntes: mov, dadosDepois: { ...estornado, motivo } });
+    return estornado;
   }
 
   async fecharPeriodo(ctx: TenantContext, ano: number, mes: number, observacao?: string) {
