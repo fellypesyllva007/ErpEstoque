@@ -9,8 +9,8 @@ KoreERP é um ERP multiempresa em Flutter + Node/Express/Prisma/PostgreSQL para 
 | Dashboard | ✅ | Cockpit executivo, indicadores, alertas estoque, movimentações recentes, faturamento do dia com contexto empresa/filial |
 | Produtos | ✅ | CRUD, filtro por categoria, importar CSV, exportar CSV, etiquetas, busca por código de barras |
 | Estoque | ✅ | Entrada, saída, ajuste, histórico completo, kardex por produto, saldo físico/reservado/disponível, reservas, inventário geral/cíclico e transferência entre filiais com status |
-| Compras | ✅ | Pedido de compra, recebimento parcial/total, histórico, cancelamento |
-| Vendas | ✅ | PDV com scanner, venda rápida, baixa automática de estoque, cancelamento com estorno |
+| Compras | ✅ | Pedido de compra, recebimento parcial/total, histórico, cancelamento, solicitações, cotações e aprovação inicial via cockpit enterprise |
+| Vendas | ✅ | PDV com scanner, venda rápida, baixa automática de estoque, cancelamento com estorno, orçamentos, pedidos corporativos e tabelas de preço |
 | Ordens de Serviço | ✅ | Abertura, atualização de status, peças utilizadas com baixa de estoque, laudo, mão de obra, garantia |
 | Clientes | ✅ | CRUD completo |
 | Fornecedores | ✅ | CRUD completo |
@@ -18,7 +18,10 @@ KoreERP é um ERP multiempresa em Flutter + Node/Express/Prisma/PostgreSQL para 
 | Notificações | ✅ | Widget flutuante em tempo real, alertas de estoque crítico e baixo |
 | Usuários | ✅ | CRUD, perfis, RBAC completo e vínculo empresa/filial |
 | Cadastros base | ✅ | Empresas, filiais, unidades, formas/condições de pagamento, centros de custo e plano de contas |
-| Financeiro | ✅ | Contas a receber/pagar, caixa, fluxo de caixa, DRE por período em regime caixa/competência, conciliação bancária, aprovação de pagamento, fechamento mensal, balancete, diário e razão |
+| Financeiro | ✅ | Contas a receber/pagar, caixa, fluxo de caixa, DRE por período em regime caixa/competência, conciliação bancária, aprovação de pagamento, fechamento mensal, balancete, diário, razão e base para controladoria |
+| CRM | ✅ | Leads, oportunidades, atividades, funil/pipeline, origem do lead, responsável comercial e base para conversão em orçamento |
+| Cockpit SAP-like | ✅ | Tela Flutter executiva com KPIs financeiros, pipeline CRM, compras enterprise, vendas corporativas e regras fiscais |
+| Fiscal corporativo | ✅ | Configuração tributária por operação/UF/regime/NCM/CFOP e entrada fiscal de compra para validações e integrações futuras |
 | Etiquetas | ✅ | Impressão HTML 80×40mm com código de barras |
 | Importação Excel | ✅ | CSV com template, criação automática de categorias/marcas |
 | Exportação Excel | ✅ | CSV de estoque, movimentações, vendas, sugestão de reposição |
@@ -40,6 +43,19 @@ O repositório mantém **uma única arquitetura de backend**: Node/Express com r
 As arquiteturas .NET avaliadas anteriormente — Minimal API com repositórios Npgsql e Controllers com EF Core/AppDbContext — foram tratadas como legado externo/descartado. Se alguma regra de negócio antiga for recuperada em branch, backup ou repositório externo, ela deve ser migrada para a stack Node/Express antes de qualquer código legado ser removido ou arquivado. O roteiro de conferência fica em `docs/auditoria-arquiteturas-dotnet.md`.
 
 Para evitar regressão, execute `npm run architecture:check` dentro de `backend`; o script falha se artefatos .NET/C# forem reintroduzidos.
+
+
+## Evolução SAP-like 60%
+
+Esta versão adiciona uma camada enterprise integrada em `/enterprise` para aproximar o produto de um ERP corporativo sem quebrar os módulos operacionais existentes:
+
+- **CRM:** `/enterprise/crm/leads`, `/enterprise/crm/oportunidades`, `/enterprise/crm/atividades` e `/enterprise/crm/pipeline`.
+- **Compras enterprise:** `/enterprise/compras/solicitacoes`, aprovação de solicitação e `/enterprise/compras/cotacoes`.
+- **Vendas corporativas:** `/enterprise/vendas/orcamentos`, `/enterprise/vendas/pedidos` e `/enterprise/vendas/tabelas-preco`.
+- **Fiscal corporativo:** `/enterprise/fiscal/configuracoes-tributarias` e `/enterprise/fiscal/entradas`.
+- **Frontend:** o menu **Cockpit SAP-like** consolida KPIs, pipeline, solicitações, orçamentos e regras fiscais.
+
+As novas tabelas preservam `empresaId` e `filialId`, registram auditoria em criações/aprovações sensíveis e usam migração SQL versionada para implantação controlada.
 
 ## Instalação
 

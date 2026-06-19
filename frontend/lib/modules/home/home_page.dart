@@ -16,6 +16,7 @@ import '../financeiro/financeiro_page.dart';
 import '../cadastros/cadastros_page.dart';
 import '../login/login_page.dart';
 import '../saas/saas_page.dart';
+import '../enterprise_page.dart';
 import '../../widgets/alerta_estoque_widget.dart';
 import '../../core/api_service.dart';
 
@@ -180,6 +181,7 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: 8),
                 Wrap(spacing: 12, runSpacing: 12, children: [
                   _modulo(context, Icons.bar_chart, 'Relatórios', const RelatoriosPage(), Colors.red),
+                  _modulo(context, Icons.business_center, 'Cockpit\nSAP-like', const EnterprisePage(), Colors.deepOrange),
                   _modulo(context, Icons.receipt_long, 'Fiscal\nNF-e', const FiscalPage(), Colors.indigo),
                   _modulo(context, Icons.attach_money, 'Financeiro', const FinanceiroPage(), Colors.green),
                   _modulo(context, Icons.settings_applications, 'Cadastros', const CadastrosPage(), Colors.blueGrey),

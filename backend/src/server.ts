@@ -21,6 +21,7 @@ import fiscalRoutes from "./modules/fiscal/fiscal.routes.js";
 import financeiroRoutes from "./modules/financeiro/financeiro.routes.js";
 import cadastrosRoutes from "./modules/cadastros/cadastros.routes.js";
 import saasRoutes from "./modules/saas/saas.routes.js";
+import enterpriseRoutes from "./modules/enterprise/enterprise.routes.js";
 
 const app = express();
 
@@ -68,6 +69,7 @@ app.use("/fiscal", fiscalRoutes);
 app.use("/financeiro", financeiroRoutes);
 app.use("/cadastros", cadastrosRoutes);
 app.use("/usuarios", usuarioRoutes);
+app.use("/enterprise", enterpriseRoutes);
 
 // Error handler global
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
