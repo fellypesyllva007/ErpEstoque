@@ -21,8 +21,18 @@ export class CompraController {
     catch (e) { return res.status(400).json({ message: e instanceof Error ? e.message : "Erro" }); }
   }
 
+  async aprovar(req: TenantRequest, res: Response) {
+    try { return res.json(await this.s.aprovar(req.tenant!, getRouteParam(req, "id"), req.user!.sub, req.body?.motivo)); }
+    catch (e) { return res.status(400).json({ message: e instanceof Error ? e.message : "Erro" }); }
+  }
+
   async registrarRecebimento(req: TenantRequest, res: Response) {
     try { return res.status(201).json(await this.s.registrarRecebimento(req.tenant!, req.body, req.user!.sub)); }
+    catch (e) { return res.status(400).json({ message: e instanceof Error ? e.message : "Erro" }); }
+  }
+
+  async devolver(req: TenantRequest, res: Response) {
+    try { return res.json(await this.s.devolver(req.tenant!, getRouteParam(req, "id"), req.body.itens ?? [], req.user!.sub, req.body.observacao)); }
     catch (e) { return res.status(400).json({ message: e instanceof Error ? e.message : "Erro" }); }
   }
 

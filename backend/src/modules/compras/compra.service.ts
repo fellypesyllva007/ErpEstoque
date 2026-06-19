@@ -66,10 +66,19 @@ export class CompraService {
     return pedido;
   }
 
+  async aprovar(ctx: TenantContext, id: string, usuarioId: string, motivo?: string) {
+    const atual = await this.buscarPorId(ctx, id);
+    if (!atual) throw new Error("Pedido não encontrado");
+    if (["CANCELADO", "RECEBIDO"].includes(atual.status)) throw new Error("Pedido não pode ser aprovado neste status");
+    const pedido = await prisma.pedidoCompra.update({ where: { id }, data: { status: "APROVADO" } });
+    await registrarAuditoria({ usuarioId, tabela: "pedidos_compra", registro: id, acao: "APROVAR", dadosDepois: { motivo, pedido }, tenant: ctx });
+    return pedido;
+  }
+
   async registrarRecebimento(ctx: TenantContext, data: RecebimentoDto, usuarioId: string) {
     const pedido = await prisma.pedidoCompra.findFirstOrThrow({ where: { id: data.pedidoId, ...tenantWhere(ctx) }, include: { itens: true } });
 
-    if (["RECEBIDO", "CANCELADO"].includes(pedido.status)) throw new Error("Pedido não pode receber mais itens");
+    if (!["APROVADO", "PARCIAL"].includes(pedido.status)) throw new Error("Pedido precisa estar aprovado para receber itens");
 
     const recebimento = await prisma.$transaction(async (tx) => {
       const rec = await tx.recebimentoCompra.create({
@@ -96,6 +105,20 @@ export class CompraService {
 
     await registrarAuditoria({ usuarioId, tabela: "recebimentos_compra", registro: recebimento.id, acao: "RECEBER", tenant: ctx });
     return recebimento;
+  }
+
+  async devolver(ctx: TenantContext, pedidoId: string, itens: { produtoId: string; quantidade: number }[], usuarioId: string, observacao?: string) {
+    const pedido = await prisma.pedidoCompra.findFirstOrThrow({ where: { id: pedidoId, ...tenantWhere(ctx) } });
+    await prisma.$transaction(async (tx) => {
+      for (const item of itens) {
+        const prod = await tx.produto.findFirstOrThrow({ where: { id: item.produtoId, ...tenantWhere(ctx) } });
+        if (prod.estoqueAtual < item.quantidade) throw new Error("Estoque insuficiente para devolução ao fornecedor");
+        await tx.produto.update({ where: { id: item.produtoId }, data: { estoqueAtual: prod.estoqueAtual - item.quantidade } });
+        await tx.movimentacaoEstoque.create({ data: { ...tenantCreate(ctx), produtoId: item.produtoId, tipo: "SAIDA", quantidade: item.quantidade, estoqueAnterior: prod.estoqueAtual, estoquePosterior: prod.estoqueAtual - item.quantidade, observacao: observacao ?? `Devolução ao fornecedor - Pedido ${pedido.numero}` } });
+      }
+    });
+    await registrarAuditoria({ usuarioId, tabela: "pedidos_compra", registro: pedidoId, acao: "DEVOLVER_FORNECEDOR", dadosDepois: { itens, observacao }, tenant: ctx });
+    return { message: "Devolução registrada e estoque estornado" };
   }
 
   async cancelar(ctx: TenantContext, id: string, usuarioId: string) {

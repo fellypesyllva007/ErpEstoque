@@ -17,6 +17,7 @@ router.post("/pagar", ...secured, c.criarPagar.bind(c));
 router.post("/pagar/:id/baixar", ...secured, c.baixarPagar.bind(c));
 router.get("/caixa", ...secured, c.caixa.bind(c));
 router.get("/fluxo-caixa", ...secured, c.fluxo.bind(c));
+router.get("/inadimplencia", ...secured, c.inadimplencia.bind(c));
 router.get("/dre", ...secured, c.dre.bind(c));
 router.get("/contabilidade/balancete", ...secured, c.balancete.bind(c));
 router.get("/contabilidade/diario", ...secured, c.diario.bind(c));
