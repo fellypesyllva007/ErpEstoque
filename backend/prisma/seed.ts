@@ -17,7 +17,7 @@ async function main() {
   console.log("✅ Empresa e filial demo criadas");
 
   // Perfis
-  const perfisNomes = ["Administrador", "Gerente", "Atendente", "Técnico", "Estoquista"];
+  const perfisNomes = ["Administrador", "Administrador SaaS", "Gerente", "Atendente", "Técnico", "Estoquista"];
   for (const nome of perfisNomes) {
     await prisma.perfil.upsert({ where: { nome }, update: { empresaId: empresa.id, filialId: filial.id }, create: { nome, empresaId: empresa.id, filialId: filial.id } });
   }
@@ -61,6 +61,8 @@ async function main() {
       telas: [{ codigo: "base", nome: "Cadastros base", perms: ["visualizar","criar","editar","excluir"] }] },
     { codigo: "financeiro", nome: "Financeiro",
       telas: [{ codigo: "painel", nome: "Painel Financeiro", perms: ["visualizar","criar","baixar","estornar"] }] },
+    { codigo: "saas", nome: "Administração SaaS",
+      telas: [{ codigo: "admin", nome: "Admin SaaS", perms: ["gerenciar"] }] },
   ];
 
   for (const mod of modulos) {
@@ -93,6 +95,16 @@ async function main() {
     });
   }
   console.log("✅ Permissões atribuídas ao Administrador");
+
+  const perfilAdminSaas = await prisma.perfil.findUniqueOrThrow({ where: { nome: "Administrador SaaS" } });
+  const permsSaas = await prisma.permissao.findMany({ where: { tela: { modulo: { codigo: "saas" } } } });
+  for (const perm of permsSaas) {
+    await prisma.perfilPermissao.upsert({
+      where: { perfilId_permissaoId: { perfilId: perfilAdminSaas.id, permissaoId: perm.id } },
+      update: {}, create: { perfilId: perfilAdminSaas.id, permissaoId: perm.id },
+    });
+  }
+  console.log("✅ Permissões SaaS atribuídas ao Administrador SaaS");
 
   // Perfil Gerente — tudo exceto usuários e auditoria
   const perfilGerente = await prisma.perfil.findUniqueOrThrow({ where: { nome: "Gerente" } });
