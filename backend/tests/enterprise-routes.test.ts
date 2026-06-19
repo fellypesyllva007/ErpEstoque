@@ -15,7 +15,16 @@ test("rotas SAP-like expõem controladoria, estoque enterprise, procurement, CRM
     assert.match(estoque, new RegExp(rota.replaceAll("/", "\\/")));
   }
 
-  for (const rota of ["/crm/leads", "/crm/oportunidades", "/crm/pipeline", "/compras/solicitacoes", "/compras/cotacoes", "/vendas/orcamentos", "/vendas/pedidos", "/vendas/tabelas-preco", "/fiscal/configuracoes-tributarias"]) {
+  for (const rota of ["/crm/leads", "/crm/oportunidades", "/crm/pipeline", "/compras/solicitacoes", "/compras/cotacoes", "/vendas/orcamentos", "/vendas/pedidos", "/vendas/tabelas-preco", "/fiscal/configuracoes-tributarias", "/workflow/regras", "/producao/listas-tecnicas", "/producao/ordens", "/producao/mrp", "/wms/enderecos", "/wms/tarefas", "/analytics/visoes"]) {
     assert.match(enterprise, new RegExp(rota.replaceAll("/", "\\/")));
+  }
+});
+
+
+test("EnterpriseService usa modelos Prisma tipados em vez de SQL unsafe para processos SAP-like", () => {
+  const service = readFileSync(new URL("../src/modules/enterprise/enterprise.service.ts", import.meta.url), "utf8");
+  assert.doesNotMatch(service, /\$queryRawUnsafe/);
+  for (const delegate of ["leadCrm", "oportunidadeCrm", "solicitacaoCompra", "orcamentoVenda", "pedidoVendaCorporativo", "eventoIntegracaoErp"]) {
+    assert.match(service, new RegExp(delegate));
   }
 });

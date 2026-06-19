@@ -35,4 +35,19 @@ export class EnterpriseController {
   criarConfiguracaoTributaria = async (req: TenantRequest, res: Response) => created(res, await service.criarConfiguracaoTributaria(ctx(req), req.body));
   entradasFiscais = async (req: TenantRequest, res: Response) => ok(res, await service.entradasFiscais(ctx(req)));
   criarEntradaFiscal = async (req: TenantRequest, res: Response) => created(res, await service.criarEntradaFiscal(ctx(req), req.body));
+  workflows = async (req: TenantRequest, res: Response) => ok(res, await service.workflows(ctx(req)));
+  criarWorkflow = async (req: TenantRequest, res: Response) => created(res, await service.criarWorkflow(ctx(req), req.body));
+  listasTecnicas = async (req: TenantRequest, res: Response) => ok(res, await service.listasTecnicas(ctx(req)));
+  criarListaTecnica = async (req: TenantRequest, res: Response) => created(res, await service.criarListaTecnica(ctx(req), req.body));
+  ordensProducao = async (req: TenantRequest, res: Response) => ok(res, await service.ordensProducao(ctx(req)));
+  criarOrdemProducao = async (req: TenantRequest, res: Response) => created(res, await service.criarOrdemProducao(ctx(req), req.body));
+  rodadasMrp = async (req: TenantRequest, res: Response) => ok(res, await service.rodadasMrp(ctx(req)));
+  criarRodadaMrp = async (req: TenantRequest, res: Response) => created(res, await service.criarRodadaMrp(ctx(req), req.body));
+  enderecosEstoque = async (req: TenantRequest, res: Response) => ok(res, await service.enderecosEstoque(ctx(req)));
+  criarEnderecoEstoque = async (req: TenantRequest, res: Response) => created(res, await service.criarEnderecoEstoque(ctx(req), req.body));
+  tarefasWms = async (req: TenantRequest, res: Response) => ok(res, await service.tarefasWms(ctx(req)));
+  criarTarefaWms = async (req: TenantRequest, res: Response) => created(res, await service.criarTarefaWms(ctx(req), req.body));
+  visoesAnaliticas = async (req: TenantRequest, res: Response) => ok(res, await service.visoesAnaliticas(ctx(req)));
+  criarVisaoAnalitica = async (req: TenantRequest, res: Response) => created(res, await service.criarVisaoAnalitica(ctx(req), req.body));
+
 }

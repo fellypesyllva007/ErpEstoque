@@ -1250,3 +1250,412 @@ model TransferenciaEstoque {
   @@index([status])
   @@map("transferencias_estoque")
 }
+
+model LeadCrm {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  nome String
+  email String?
+  telefone String?
+  origem String?
+  status String @default("NOVO")
+  responsavelId String?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  oportunidades OportunidadeCrm[]
+  atividades AtividadeCrm[]
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([status])
+  @@map("leads_crm")
+}
+
+model OportunidadeCrm {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  leadId String?
+  clienteId String?
+  responsavelId String?
+  titulo String
+  etapa String @default("PROSPECCAO")
+  status String @default("ABERTA")
+  valorEstimado Decimal @default(0) @db.Decimal(12, 2)
+  probabilidade Int @default(0)
+  previsaoFechamento DateTime?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  lead LeadCrm? @relation(fields: [leadId], references: [id])
+  orcamentos OrcamentoVenda[]
+  atividades AtividadeCrm[]
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([status])
+  @@index([etapa])
+  @@map("oportunidades_crm")
+}
+
+model AtividadeCrm {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  leadId String?
+  oportunidadeId String?
+  tipo String
+  descricao String
+  responsavelId String?
+  prazo DateTime?
+  status String @default("PENDENTE")
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  lead LeadCrm? @relation(fields: [leadId], references: [id])
+  oportunidade OportunidadeCrm? @relation(fields: [oportunidadeId], references: [id])
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([status])
+  @@map("atividades_crm")
+}
+
+model SolicitacaoCompra {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  numero String?
+  solicitanteId String?
+  aprovadorId String?
+  centroCustoId String?
+  descricao String
+  justificativa String?
+  valorEstimado Decimal @default(0) @db.Decimal(12, 2)
+  status String @default("PENDENTE")
+  aprovadoEm DateTime?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  cotacoes CotacaoCompra[]
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([status])
+  @@map("solicitacoes_compra")
+}
+
+model CotacaoCompra {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  solicitacaoId String?
+  fornecedorId String?
+  valorTotal Decimal @default(0) @db.Decimal(12, 2)
+  prazoEntrega DateTime?
+  status String @default("ABERTA")
+  vencedora Boolean @default(false)
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  solicitacao SolicitacaoCompra? @relation(fields: [solicitacaoId], references: [id])
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([status])
+  @@map("cotacoes_compra")
+}
+
+model OrcamentoVenda {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  numero String?
+  oportunidadeId String?
+  clienteId String?
+  vendedorId String?
+  valorTotal Decimal @default(0) @db.Decimal(12, 2)
+  status String @default("RASCUNHO")
+  validade DateTime?
+  aprovadoEm DateTime?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  oportunidade OportunidadeCrm? @relation(fields: [oportunidadeId], references: [id])
+  pedidos PedidoVendaCorporativo[]
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([status])
+  @@map("orcamentos_venda")
+}
+
+model PedidoVendaCorporativo {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  numero String?
+  orcamentoId String?
+  clienteId String?
+  vendedorId String?
+  valorTotal Decimal @default(0) @db.Decimal(12, 2)
+  status String @default("ABERTO")
+  faturadoParcial Boolean @default(false)
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  orcamento OrcamentoVenda? @relation(fields: [orcamentoId], references: [id])
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([status])
+  @@map("pedidos_venda_corporativos")
+}
+
+model TabelaPreco {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  nome String
+  canal String?
+  moeda String @default("BRL")
+  ativo Boolean @default(true)
+  regras Json?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  @@index([empresaId])
+  @@index([filialId])
+  @@map("tabelas_preco")
+}
+
+model ConfiguracaoTributaria {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  nome String
+  regimeTributario String?
+  ufOrigem String?
+  ufDestino String?
+  cfop String?
+  cstCsosn String?
+  aliquotas Json?
+  ativo Boolean @default(true)
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  @@index([empresaId])
+  @@index([filialId])
+  @@map("configuracoes_tributarias")
+}
+
+model EntradaFiscalCompra {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  fornecedorId String?
+  chaveAcesso String? @unique
+  numero String?
+  serie String?
+  xmlOriginal String?
+  status String @default("IMPORTADA")
+  valorTotal Decimal @default(0) @db.Decimal(12, 2)
+  conferidaEm DateTime?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([status])
+  @@map("entradas_fiscais_compra")
+}
+
+model EventoIntegracaoErp {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  modulo String
+  tipo String
+  referenciaId String
+  payload Json?
+  status String @default("PROCESSADO")
+  processadoEm DateTime @default(now())
+  criadoEm DateTime @default(now())
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([modulo, tipo])
+  @@index([referenciaId])
+  @@map("eventos_integracao_erp")
+}
+
+model RegraWorkflow {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  processo String
+  nome String
+  condicoes Json?
+  alcadaValor Decimal? @db.Decimal(12, 2)
+  perfilAprovadorId String?
+  slaHoras Int?
+  ativo Boolean @default(true)
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  instancias InstanciaWorkflow[]
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([processo])
+  @@map("regras_workflow")
+}
+
+model InstanciaWorkflow {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  regraId String?
+  processo String
+  referenciaId String
+  status String @default("PENDENTE")
+  solicitanteId String?
+  aprovadorAtualId String?
+  historico Json?
+  prazoSla DateTime?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  regra RegraWorkflow? @relation(fields: [regraId], references: [id])
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([processo, referenciaId])
+  @@index([status])
+  @@map("instancias_workflow")
+}
+
+model ListaTecnicaProduto {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  produtoId String
+  versao String @default("1")
+  quantidadeBase Decimal @default(1) @db.Decimal(12, 3)
+  ativo Boolean @default(true)
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  itens ItemListaTecnica[]
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([produtoId])
+  @@map("listas_tecnicas_produto")
+}
+
+model ItemListaTecnica {
+  id String @id @default(uuid())
+  listaTecnicaId String
+  insumoId String
+  quantidade Decimal @db.Decimal(12, 3)
+  perdaPercentual Decimal @default(0) @db.Decimal(5, 2)
+  listaTecnica ListaTecnicaProduto @relation(fields: [listaTecnicaId], references: [id], onDelete: Cascade)
+  @@index([listaTecnicaId])
+  @@index([insumoId])
+  @@map("itens_lista_tecnica")
+}
+
+model OrdemProducao {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  numero String?
+  produtoId String
+  listaTecnicaId String?
+  quantidadePlanejada Decimal @db.Decimal(12, 3)
+  quantidadeProduzida Decimal @default(0) @db.Decimal(12, 3)
+  status String @default("PLANEJADA")
+  inicioPrevisto DateTime?
+  fimPrevisto DateTime?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  apontamentos ApontamentoProducao[]
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([status])
+  @@map("ordens_producao")
+}
+
+model ApontamentoProducao {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  ordemProducaoId String
+  usuarioId String?
+  quantidadeProduzida Decimal @db.Decimal(12, 3)
+  refugos Decimal @default(0) @db.Decimal(12, 3)
+  consumo Json?
+  apontadoEm DateTime @default(now())
+  ordemProducao OrdemProducao @relation(fields: [ordemProducaoId], references: [id])
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([ordemProducaoId])
+  @@map("apontamentos_producao")
+}
+
+model RodadaMrp {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  horizonteInicio DateTime
+  horizonteFim DateTime
+  status String @default("GERADA")
+  parametros Json?
+  resultados Json?
+  criadoEm DateTime @default(now())
+  @@index([empresaId])
+  @@index([filialId])
+  @@map("rodadas_mrp")
+}
+
+model EnderecoEstoque {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  deposito String
+  rua String?
+  prateleira String?
+  nivel String?
+  bin String
+  tipo String @default("PICKING")
+  ativo Boolean @default(true)
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  tarefas TarefaWms[]
+  @@unique([empresaId, filialId, deposito, bin])
+  @@index([empresaId])
+  @@index([filialId])
+  @@map("enderecos_estoque")
+}
+
+model TarefaWms {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  tipo String
+  referenciaId String?
+  produtoId String?
+  enderecoOrigemId String?
+  enderecoDestinoId String?
+  quantidade Decimal @default(0) @db.Decimal(12, 3)
+  status String @default("PENDENTE")
+  prioridade Int @default(0)
+  regraSeparacao String?
+  operadorId String?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  enderecoOrigem EnderecoEstoque? @relation(fields: [enderecoOrigemId], references: [id])
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([tipo, status])
+  @@map("tarefas_wms")
+}
+
+model VisaoAnalitica {
+  empresaId String?
+  filialId String?
+  id String @id @default(uuid())
+  nome String
+  area String
+  metrica String
+  dimensoes Json?
+  filtros Json?
+  valor Decimal @default(0) @db.Decimal(14, 2)
+  periodoInicio DateTime?
+  periodoFim DateTime?
+  criadoEm DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+  @@index([empresaId])
+  @@index([filialId])
+  @@index([area])
+  @@map("visoes_analiticas")
+}
